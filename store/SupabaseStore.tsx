@@ -4,13 +4,13 @@ import { User, DailyMenu, Order, Message, Comment, Department, UserRole, MenuIte
 
 interface StoreData {
   currentUser: User | null;
-  currentCompany: Company | null; // <--- NEW: Holds active company branding
+  currentCompany: Company | null;
   users: User[]; menus: DailyMenu[]; orders: Order[]; messages: Message[]; comments: Comment[];
   menuIssues: MenuIssue[]; departments: Department[]; appConfig: AppConfig; masterFoodItems: MasterFoodItem[];
   menuTemplates: MenuTemplate[];
   isLoading: boolean;
 
-  login: (usernameOrEmail: string) => Promise<boolean>; 
+  login: (input: string) => Promise<boolean>; 
   logout: () => void;
   
   addMenu: (menu: DailyMenu) => Promise<void>; 
@@ -40,19 +40,19 @@ interface StoreData {
 
 const StoreContext = createContext<StoreData | undefined>(undefined);
 
-// Initial Fallback Data
+// DEFAULT FALLBACK COMPANY (Used before login)
 const DEFAULT_COMPANY: Company = {
     id: 'default',
     name: 'LunchLink Enterprise',
     logoUrl: '',
-    primaryColor: '#2563eb',
+    primaryColor: '#2563eb', // Standard Blue
     secondaryColor: '#1e40af',
-    welcomeMessage: 'Welcome to the Employee Portal'
+    welcomeMessage: 'Employee Portal'
 };
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [currentCompany, setCurrentCompany] = useState<Company | null>(null); // New State
+  const [currentCompany, setCurrentCompany] = useState<Company | null>(null); 
   
   const [users, setUsers] = useState<User[]>([]);
   const [menus, setMenus] = useState<DailyMenu[]>([]);
@@ -63,10 +63,18 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [menuTemplates, setMenuTemplates] = useState<MenuTemplate[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [masterFoodItems, setMasterFoodItems] = useState<MasterFoodItem[]>([]);
-  const [appConfig, setAppConfig] = useState<AppConfig>({ companyName: 'LunchLink', tagline: 'Loading...', logoUrl: '', orderCutoffTime: '10:30' });
+  
+  // FIX: Default text is set here immediately. No more "Loading...".
+  const [appConfig, setAppConfig] = useState<AppConfig>({ 
+    companyName: 'LunchLink Enterprise', 
+    tagline: 'Employee Lunch Ordering System', 
+    logoUrl: '', 
+    orderCutoffTime: '10:30' 
+  });
+  
   const [isLoading, setIsLoading] = useState(false);
 
-  // --- LOGIN LOGIC (The "Chameleon" Brain) ---
+  // --- LOGIN LOGIC (Email or Username) ---
   const login = async (input: string) => {
     setIsLoading(true);
     try {
@@ -77,7 +85,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             .from('app_users')
             .select('*')
             .or(`username.eq.${cleanInput},email.eq.${cleanInput}`)
-            .single();
+            .maybeSingle(); // Safe query, doesn't crash if not found
 
         if (error || !userMatches) {
             setIsLoading(false);
@@ -88,12 +96,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             id: userMatches.id, username: userMatches.username, fullName: userMatches.full_name,
             role: userMatches.role as UserRole, email: userMatches.email, isLocked: userMatches.is_locked,
             avatarUrl: userMatches.avatar_url, departmentId: userMatches.department_id,
-            companyId: userMatches.company_id // Grab the company ID
+            companyId: userMatches.company_id 
         };
 
         if (user.isLocked) { setIsLoading(false); return false; }
 
-        // 2. Fetch Company Details (Colors, Logo)
+        // 2. Fetch Company Details based on the user's assigned company
         if (user.companyId) {
             const { data: compData } = await supabase.from('companies').select('*').eq('id', user.companyId).single();
             if (compData) {
@@ -108,7 +116,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
 
         setCurrentUser(user);
+        
+        // 3. Load data specific to that company
         await fetchCompanyData(user.companyId || '');
+        
         setIsLoading(false);
         return true;
     } catch (e) {
@@ -121,7 +132,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const logout = () => {
       setCurrentUser(null);
       setCurrentCompany(null);
-      setMenus([]); // Clear sensitive data
+      setMenus([]); 
       setOrders([]);
   };
 
@@ -129,25 +140,24 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const fetchCompanyData = async (companyId: string) => {
       if (!companyId) return;
 
-      // Fetch Menus for THIS company
       const { data: mData } = await supabase.from('daily_menus').select('*').eq('company_id', companyId);
       if(mData) setMenus(mData.map(m => ({ id: m.id, date: m.date, items: m.items, notes: m.notes, departmentIds: m.department_ids })));
 
-      // Fetch Master Items for THIS company
       const { data: fData } = await supabase.from('master_food_items').select('*').eq('company_id', companyId);
       if(fData) setMasterFoodItems(fData.map(f => ({ id: f.id, name: f.name, description: f.description, category: f.category, calories: f.calories, dietaryInfo: f.dietary_info, isAvailable: f.is_available })));
 
-      // Fetch Orders for THIS company
       const { data: oData } = await supabase.from('orders').select('*').eq('company_id', companyId);
       if(oData) setOrders(oData.map(o => ({ id: o.id, userId: o.user_id, menuId: o.menu_id, selectedItemIds: o.selected_item_ids, date: o.date, specialInstructions: o.special_instructions, status: o.status, timestamp: o.timestamp })));
       
-      // Fetch Issues
       const { data: iData } = await supabase.from('menu_issues').select('*').eq('company_id', companyId);
       if(iData) setMenuIssues(iData.map(i => ({ id: i.id, userId: i.user_id, date: i.date, issue: i.issue, status: i.status, chefResponse: i.chef_response, isReadByChef: i.is_read_by_chef, timestamp: i.timestamp })));
       
-      // Fetch Templates
       const { data: tData } = await supabase.from('menu_templates').select('*').eq('company_id', companyId).order('created_at', { ascending: false }); 
       if (tData) setMenuTemplates(tData.map(t => ({ id: t.id, name: t.name, items: t.items, notes: t.notes, createdById: t.created_by_id, createdByName: t.created_by_name, isShared: t.is_shared, createdAt: t.created_at })));
+      
+      // Update config if company has specific overrides
+      const { data: cData } = await supabase.from('app_config').select('*').single(); 
+      if(cData) setAppConfig(prev => ({ ...prev, orderCutoffTime: cData.order_cutoff_time }));
   };
 
   // --- ACTIONS (Tagging data with Company ID) ---
@@ -197,8 +207,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const deleteTemplate = async (id: string) => { setMenuTemplates(p => p.filter(t => t.id !== id)); await supabase.from('menu_templates').delete().eq('id', id); };
   const placeOrder = async (o: Order) => { setOrders(p => [...p, o]); await supabase.from('orders').insert({ id: o.id, user_id: o.userId, menu_id: o.menuId, selected_item_ids: o.selectedItemIds, date: o.date, special_instructions: o.specialInstructions, status: o.status, timestamp: o.timestamp, company_id: currentUser?.companyId }); };
   const reportIssue = async (i: MenuIssue) => { setMenuIssues(p => [...p, i]); await supabase.from('menu_issues').insert({ id: i.id, user_id: i.userId, date: i.date, issue: i.issue, status: 'Open', is_read_by_chef: false, timestamp: i.timestamp, company_id: currentUser?.companyId }); };
-
-  // ... (Other functions remain similar but should implicitly trust the RLS policies in future)
+  const respondToIssue = async (id: string, r: string) => { setMenuIssues(p => p.map(i => i.id === id ? { ...i, chefResponse: r, status: 'Resolved' } : i)); await supabase.from('menu_issues').update({ chef_response: r, status: 'Resolved' }).eq('id', id); };
+  
   const lockUser = async (id: string, l: boolean) => setUsers(p => p.map(u => u.id === id ? { ...u, isLocked: l } : u));
   const addDepartment = async (d: Department) => setDepartments(p => [...p, d]);
   const updateOrderStatus = async (id: string, s: Order['status']) => setOrders(p => p.map(o => o.id === id ? { ...o, status: s } : o));
@@ -206,7 +216,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const sendMessage = async (m: Message) => setMessages(p => [...p, m]);
   const addComment = async (c: Comment) => setComments(p => [...p, c]);
   const respondToComment = async (id: string, r: string, u: User) => {};
-  const respondToIssue = async (id: string, r: string) => { setMenuIssues(p => p.map(i => i.id === id ? { ...i, chefResponse: r, status: 'Resolved' } : i)); await supabase.from('menu_issues').update({ chef_response: r, status: 'Resolved' }).eq('id', id); };
   const importData = (d: any) => {}; const exportData = () => ({ users, menus, orders });
 
   return (
