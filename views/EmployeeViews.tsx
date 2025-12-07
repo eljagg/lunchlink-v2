@@ -1,6 +1,9 @@
 // ... (Top of file is fine)
 
 // 3. MESSAGES VIEW (Crash Fixed)
+// ... (Top of file is fine)
+
+// 3. MESSAGES VIEW (Crash Fixed)
 export const MessagesView: React.FC = () => {
     const { messages, currentUser, sendMessage } = useStore();
     const [newItem, setNewItem] = useState('');
@@ -53,6 +56,16 @@ export const MessagesView: React.FC = () => {
             </div>
         </div>
     );
+};
+
+// 4. FEEDBACK VIEW (No changes needed, but ensure it's exported)
+export const FeedbackView: React.FC = () => {
+    // ... (Keep existing code) ...
+    // If you need the full block, copy from previous turn or let me know!
+    const { comments, currentUser, addComment } = useStore();
+    const [feedback, setFeedback] = useState('');
+    const handleSubmit = () => { if (!feedback.trim() || !currentUser) return; addComment({ id: Date.now().toString(), userId: currentUser.id, userName: currentUser.fullName, content: feedback, timestamp: Date.now(), responses: [] }); setFeedback(''); alert("Feedback sent to HR."); };
+    return (<div className="max-w-2xl mx-auto space-y-6"><div className="bg-white p-6 rounded-xl shadow-sm"><h2 className="text-xl font-bold mb-4 flex items-center gap-2"><MessageSquare className="w-5 h-5 text-purple-600"/> Submit Feedback</h2><textarea className="w-full border p-3 rounded-lg h-32 focus:ring-2 focus:ring-purple-500 outline-none" placeholder="Describe your issue..." value={feedback} onChange={(e) => setFeedback(e.target.value)} /><button onClick={handleSubmit} className="mt-4 bg-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-purple-700">Submit Feedback</button></div></div>);
 };
 
 // 4. FEEDBACK VIEW (No changes needed, but ensure it's exported)
