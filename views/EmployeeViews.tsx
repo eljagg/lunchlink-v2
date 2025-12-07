@@ -175,7 +175,187 @@ export const OrderLunchView: React.FC = () => {
   );
 };
 
-// ... OrderHistory, Messages, Feedback (No major changes needed, they inherit dark theme)
-export const OrderHistoryView: React.FC = () => { return <div className="text-white">History View (Placeholder)</div>; }; // Keeping brief for safety, ask if you need full code!
-export const MessagesView: React.FC = () => { return <div className="text-white">Messages View (Placeholder)</div>; };
-export const FeedbackView: React.FC = () => { return <div className="text-white">Feedback View (Placeholder)</div>; };
+// ... (OrderLunchView remains exactly as it is above)
+
+// =========================================================
+// 2. ORDER HISTORY VIEW (Dark Mode)
+// =========================================================
+export const OrderHistoryView: React.FC = () => {
+  const { orders, currentUser, menus } = useStore();
+  const myOrders = orders.filter(o => o.userId === currentUser?.id).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  
+  const getItemNames = (menuId: string, itemIds: string[]) => {
+      const menu = menus.find(m => m.id === menuId);
+      if (!menu) return `${itemIds.length} items`;
+      const names = menu.items.filter(i => itemIds.includes(i.id)).map(i => i.name).join(', ');
+      return names || `${itemIds.length} items`;
+  };
+
+  return (
+    <div className="space-y-6">
+       <div className="bg-slate-800 p-6 rounded-xl shadow-sm border-b border-slate-700">
+          <h2 className="text-2xl font-bold text-white flex items-center">
+              <Clock className="w-6 h-6 mr-3 text-blue-500" />
+              My Order History
+          </h2>
+       </div>
+
+       {myOrders.length === 0 ? (
+           <div className="text-center py-20 bg-slate-800 rounded-xl shadow-sm border border-slate-700">
+               <Utensils className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+               <p className="text-slate-400">You haven't placed any orders yet.</p>
+           </div>
+       ) : (
+           <div className="bg-slate-800 rounded-xl shadow-sm overflow-hidden border border-slate-700">
+               <table className="w-full text-left">
+                   <thead className="bg-slate-900 border-b border-slate-700">
+                       <tr>
+                           <th className="p-4 text-slate-400 font-medium uppercase text-xs">Date</th>
+                           <th className="p-4 text-slate-400 font-medium uppercase text-xs">Items</th>
+                           <th className="p-4 text-slate-400 font-medium uppercase text-xs">Status</th>
+                       </tr>
+                   </thead>
+                   <tbody className="divide-y divide-slate-700">
+                       {myOrders.map(order => (
+                           <tr key={order.id} className="hover:bg-slate-700/50 transition-colors">
+                               <td className="p-4">
+                                   <div className="font-bold text-white">
+                                       {new Date(order.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                                   </div>
+                                   <div className="text-xs text-slate-500">
+                                       {new Date(order.timestamp).toLocaleTimeString()}
+                                   </div>
+                               </td>
+                               <td className="p-4">
+                                   <p className="text-sm text-slate-300 line-clamp-2">
+                                       {getItemNames(order.menuId, order.selectedItemIds)}
+                                   </p>
+                               </td>
+                               <td className="p-4">
+                                   <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                                       order.status === 'Confirmed' 
+                                       ? 'bg-green-900/30 text-green-400 border-green-800' 
+                                       : 'bg-yellow-900/30 text-yellow-400 border-yellow-800'
+                                   }`}>
+                                       {order.status}
+                                   </span>
+                               </td>
+                           </tr>
+                       ))}
+                   </tbody>
+               </table>
+           </div>
+       )}
+    </div>
+  );
+};
+
+// =========================================================
+// 3. MESSAGES VIEW (Dark Mode)
+// =========================================================
+export const MessagesView: React.FC = () => {
+    const { messages, currentUser, sendMessage } = useStore();
+    const [newItem, setNewItem] = useState('');
+    
+    if (!currentUser) return null;
+
+    const myMessages = messages.filter(m => m.fromUserId === currentUser.id || m.toUserId === currentUser.id || (currentUser.role === 'KITCHEN_ADMIN' && m.toUserId === 'kitchen'));
+    
+    const handleSend = () => { 
+        if (!newItem.trim()) return; 
+        sendMessage({ 
+            id: Date.now().toString(), 
+            fromUserId: currentUser.id, 
+            fromUserName: currentUser.fullName, 
+            toUserId: 'kitchen', 
+            content: newItem, 
+            timestamp: Date.now(), 
+            read: false 
+        }); 
+        setNewItem(''); 
+    };
+
+    return (
+        <div className="max-w-3xl mx-auto h-[600px] flex flex-col bg-slate-800 rounded-xl shadow-lg border border-slate-700">
+            <div className="p-4 border-b border-slate-700 font-bold text-white flex items-center">
+                <MessageCircle className="w-5 h-5 mr-2 text-blue-500" />
+                Direct Line to Kitchen
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-900/50">
+                {myMessages.length === 0 && <p className="text-center text-slate-600 mt-10">No messages yet.</p>}
+                {myMessages.map(msg => (
+                    <div key={msg.id} className={`flex ${msg.fromUserId === currentUser.id ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[80%] p-3 rounded-lg shadow-sm ${
+                            msg.fromUserId === currentUser.id 
+                            ? 'bg-blue-600 text-white' 
+                            : 'bg-slate-700 text-slate-200'
+                        }`}>
+                            {msg.fromUserId !== currentUser.id && <p className="text-[10px] font-bold text-slate-400 mb-1">{msg.fromUserName}</p>}
+                            <p className="text-sm">{msg.content}</p>
+                            <span className="text-[10px] opacity-70 block mt-1 text-right">{new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                        </div>
+                    </div>
+                ))}
+            </div>
+            <div className="p-4 border-t border-slate-700 flex gap-2 bg-slate-800">
+                <input 
+                    className="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-4 py-3 text-sm text-white focus:ring-2 focus:ring-blue-500 outline-none placeholder-slate-500" 
+                    placeholder="Type a message to the chef..." 
+                    value={newItem} 
+                    onChange={(e) => setNewItem(e.target.value)} 
+                />
+                <button onClick={handleSend} className="bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition-colors shadow-lg">
+                    <Send className="w-5 h-5" />
+                </button>
+            </div>
+        </div>
+    );
+};
+
+// =========================================================
+// 4. FEEDBACK VIEW (Dark Mode)
+// =========================================================
+export const FeedbackView: React.FC = () => {
+    const { comments, currentUser, addComment } = useStore();
+    const [feedback, setFeedback] = useState('');
+    
+    const handleSubmit = () => { 
+        if (!feedback.trim() || !currentUser) return; 
+        addComment({ 
+            id: Date.now().toString(), 
+            userId: currentUser.id, 
+            userName: currentUser.fullName, 
+            content: feedback, 
+            timestamp: Date.now(), 
+            responses: [] 
+        }); 
+        setFeedback(''); 
+        alert("Feedback sent to HR."); 
+    };
+
+    return (
+        <div className="max-w-2xl mx-auto space-y-6">
+            <div className="bg-slate-800 p-8 rounded-xl shadow-lg border border-slate-700">
+                <h2 className="text-xl font-bold mb-2 flex items-center gap-2 text-white">
+                    <FileText className="w-6 h-6 text-purple-500"/> 
+                    Submit Confidential Feedback
+                </h2>
+                <p className="text-slate-400 text-sm mb-6">Your comments here are sent directly to HR and Management.</p>
+                
+                <textarea 
+                    className="w-full bg-slate-900 border border-slate-600 p-4 rounded-xl h-40 focus:ring-2 focus:ring-purple-500 outline-none text-white placeholder-slate-500 text-sm" 
+                    placeholder="Describe your suggestion or concern..." 
+                    value={feedback} 
+                    onChange={(e) => setFeedback(e.target.value)} 
+                />
+                
+                <button 
+                    onClick={handleSubmit} 
+                    className="mt-6 w-full bg-purple-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-purple-700 transition-all shadow-lg shadow-purple-900/20"
+                >
+                    Submit Feedback
+                </button>
+            </div>
+        </div>
+    );
+};
