@@ -1,0 +1,5 @@
+{
+  "name": "LunchLink Enterprise",
+  "description": "A scalable employee lunch ordering system with Active Directory integration simulation, admin menu management, and HR feedback loops.",
+  "requestFramePermissions": []
+}
