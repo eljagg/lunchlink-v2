@@ -30,7 +30,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate }) => 
         onClick={() => handleNavigate(view)}
         className={`flex items-center w-full px-4 py-3 text-sm font-medium transition-colors duration-200 
           ${isActive 
-            ? 'bg-blue-700 text-white shadow-md' // Darker Blue for active state
+            ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' 
             : 'text-slate-400 hover:bg-slate-800 hover:text-white'
           }`}
       >
@@ -41,11 +41,11 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate }) => 
   };
 
   return (
-    <div className="flex h-screen bg-slate-200 overflow-hidden"> 
-      {/* ^^^ CHANGED: bg-slate-200 is much darker/calmer than the previous white/slate-50 */}
+    // DARK THEME BASE: bg-slate-950
+    <div className="flex h-screen bg-slate-950 overflow-hidden text-slate-200"> 
       
       {/* MOBILE HEADER */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-20 bg-slate-900 shadow-md z-30 flex items-center justify-between px-6">
+      <div className="md:hidden fixed top-0 left-0 right-0 h-20 bg-slate-900 shadow-md z-30 flex items-center justify-between px-6 border-b border-slate-800">
           <div className="flex items-center space-x-3">
              <div className="bg-blue-600 p-2 rounded-lg"><Utensils className="w-6 h-6 text-white" /></div>
              <span className="font-bold text-white text-lg truncate">{appConfig?.companyName}</span>
@@ -60,12 +60,12 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate }) => 
 
       {/* MOBILE OVERLAY */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 bg-black/70 z-30 md:hidden" onClick={() => setIsMobileMenuOpen(false)} />
+        <div className="fixed inset-0 bg-black/80 z-30 md:hidden" onClick={() => setIsMobileMenuOpen(false)} />
       )}
 
-      {/* SIDEBAR (Dark Navy) */}
+      {/* SIDEBAR */}
       <aside className={`
-          fixed md:relative z-40 h-full w-64 bg-slate-900 shadow-2xl flex flex-col transition-transform duration-300 ease-in-out
+          fixed md:relative z-40 h-full w-64 bg-slate-900 shadow-2xl flex flex-col transition-transform duration-300 ease-in-out border-r border-slate-800
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} 
           md:translate-x-0 md:flex
       `}>
@@ -125,15 +125,15 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate }) => 
                <p className="text-xs text-slate-400 capitalize truncate">{currentUser.role.replace('_', ' ').toLowerCase()}</p>
              </div>
           </div>
-          <button onClick={logout} className="flex items-center justify-center w-full px-4 py-2 text-sm text-red-400 bg-slate-800 hover:bg-red-900/30 hover:text-red-300 rounded-lg transition-colors border border-slate-700">
+          <button onClick={logout} className="flex items-center justify-center w-full px-4 py-2 text-sm text-red-400 bg-slate-800 hover:bg-red-900/20 hover:text-red-300 rounded-lg transition-colors border border-slate-700">
             <LogOut className="w-4 h-4 mr-2" /> Sign Out
           </button>
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto h-full w-full pt-20 md:pt-0 bg-slate-200">
-        <header className="bg-gray-100 shadow-sm sticky top-0 z-20 px-4 md:px-8 py-4 flex justify-between items-center hidden md:flex border-b border-gray-300">
-            <h1 className="text-2xl font-bold text-slate-800 capitalize">
+      <main className="flex-1 overflow-y-auto h-full w-full pt-20 md:pt-0 bg-slate-950">
+        <header className="bg-slate-900 shadow-sm sticky top-0 z-20 px-4 md:px-8 py-4 flex justify-between items-center hidden md:flex border-b border-slate-800">
+            <h1 className="text-2xl font-bold text-white capitalize">
                 {activeView === 'order' ? 'Lunch Menu' : activeView.replace('-', ' ')}
             </h1>
         </header>
