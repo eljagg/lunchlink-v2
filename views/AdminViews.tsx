@@ -75,6 +75,14 @@ export const AdminKitchenDashboard: React.FC = () => {
                       </div>
                   </div>
               ))}
+              {resolvedIssues.length > 0 && (
+                  <div className="mt-8 pt-8 border-t border-gray-100">
+                      <h4 className="text-sm font-bold text-gray-400 uppercase mb-4 tracking-wider">Recently Resolved</h4>
+                      <div className="space-y-2">
+                        {resolvedIssues.slice(0, 5).map(issue => (<div key={issue.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100 text-sm"><span className="text-gray-600 font-medium">"{issue.issue}"</span><div className="flex items-center text-green-600 bg-green-50 px-3 py-1 rounded-full text-xs font-bold"><CheckCircle className="w-3 h-3 mr-1" /> Fixed</div></div>))}
+                      </div>
+                  </div>
+              )}
           </div>
       </div>
     </div>
@@ -147,7 +155,7 @@ export const AdminMenuManager: React.FC = () => {
       </div>
 
       <div className="bg-white p-6 rounded-xl shadow-sm"><div className="flex gap-4 overflow-x-auto pb-2">{weekDates.map((dateObj) => { const dateStr = toLocalISOString(dateObj); const isSelected = dateStr === selectedDate; const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' }); const dayNum = dateObj.getDate(); const hasMenu = menus.some(m => m.date === dateStr); return (<button key={dateStr} onClick={() => setSelectedDate(dateStr)} className={`flex flex-col items-center justify-center flex-shrink-0 w-24 h-24 p-2 rounded-xl border-2 transition-all relative gap-1 ${isSelected ? 'border-blue-600 bg-blue-600 text-white font-bold shadow-lg transform scale-105' : 'border-gray-100 bg-gray-50 hover:bg-gray-100 text-gray-500'}`}><span className="text-xs uppercase">{dayName}</span><span className="text-3xl">{dayNum}</span>{hasMenu && <div className={`w-2 h-2 rounded-full mt-1 ${isSelected ? 'bg-white' : 'bg-green-500'}`}></div>}</button>); })}</div></div>
-      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-r-xl shadow-sm"><label className="block text-sm font-bold text-yellow-800 mb-2">Daily Notes & Prices</label><textarea value={currentMenu ? currentMenu.notes : notes} onChange={(e) => { setNotes(e.target.value); if(currentMenu) updateMenu({...currentMenu, notes: e.target.value}); }} className="w-full p-3 rounded border border-yellow-200 bg-white focus:ring-2 focus:ring-yellow-500 outline-none text-sm h-20" placeholder="Type menu notes here..." /></div>
+      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-r-xl shadow-sm"><label className="block text-sm font-bold text-yellow-800 mb-2">Daily Notes & Prices (Visible to Staff)</label><textarea value={currentMenu ? currentMenu.notes : notes} onChange={(e) => { setNotes(e.target.value); if(currentMenu) updateMenu({...currentMenu, notes: e.target.value}); }} className="w-full p-3 rounded border border-yellow-200 bg-white focus:ring-2 focus:ring-yellow-500 outline-none text-sm h-20" placeholder="Type menu notes here..." /></div>
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200"><div className="grid md:grid-cols-3 gap-4 items-end"><div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">1. Choose Category</label><select className="w-full p-3 border rounded-lg bg-gray-50 font-medium" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value as MenuCategory)}><option value="Protein">Protein</option><option value="Carbohydrate">Carbohydrate</option><option value="Sides">Sides</option><option value="Fibre">Fibre / Vegetable</option><option value="Soup">Soup</option><option value="Vegetarian">Vegetarian</option><option value="Sandwiches">Sandwiches</option><option value="Special">Special</option></select></div><div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">2. Select Food Item</label><select className="w-full p-3 border rounded-lg bg-gray-50 font-medium" value={selectedMasterItemId} onChange={(e) => setSelectedMasterItemId(e.target.value)}><option value="">-- Select Item --</option>{dropdownOptions.map(item => (<option key={item.id} value={item.id}>{item.name}</option>))}</select></div><button onClick={handleAddItem} disabled={!selectedMasterItemId} className={`w-full py-3 rounded-lg font-bold text-white shadow-md transition-all flex items-center justify-center ${selectedMasterItemId ? 'bg-green-600 hover:bg-green-700 hover:-translate-y-1' : 'bg-gray-300 cursor-not-allowed'}`}><Plus className="w-5 h-5 mr-2" /> Add Item</button></div></div>
       <div className="space-y-4"><div className="flex items-center justify-between"><h3 className="text-xl font-bold text-gray-800">Preview: {formatDateDisplay(selectedDate)}</h3><span className="text-xs text-gray-400 bg-white px-2 py-1 rounded border">Click items below to remove them</span></div><div className="relative group ring-4 ring-gray-100 rounded-xl p-1"><MenuGrid items={menuItems} selectedItemIds={[]} onItemClick={(id) => { if(confirm("Remove this item from the menu?")) handleRemoveItem(id); }} /></div></div>
 
@@ -187,7 +195,6 @@ export const AdminMenuManager: React.FC = () => {
   );
 };
 
-// ... (KitchenMasterDatabase, AdminUserManager, etc. remain the same)
 export const KitchenMasterDatabase: React.FC = () => {
   const { masterFoodItems, addMasterItem, updateMasterItem, deleteMasterItem } = useStore();
   const [name, setName] = useState('');
