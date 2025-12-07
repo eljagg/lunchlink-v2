@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-// FIXED IMPORT: Using SupabaseStore
 import { StoreProvider, useStore } from './store/SupabaseStore';
 import Login from './views/Login';
 import Layout from './components/Layout';
 import { OrderLunchView, OrderHistoryView, MessagesView, FeedbackView } from './views/EmployeeViews'; 
-// FIXED IMPORT: Added AdminCompanyManager to the list
 import { AdminKitchenDashboard, AdminMenuManager, KitchenMasterDatabase, AdminUserManager, AdminDepts, AdminCompanyManager } from './views/AdminViews';
-import { UserRole } from '../types';
+// FIXED IMPORT: Changed '../types' to './types' because they are in the same folder
+import { UserRole } from './types';
 
 const DashboardStats: React.FC = () => {
     return <div className="p-4 bg-white rounded shadow">Dashboard Stats Placeholder</div>;
@@ -50,7 +49,7 @@ const MainContent: React.FC = () => {
       // Super Admin Views
       case 'admin-users': return <AdminUserManager />;
       case 'admin-depts': return <AdminDepts />;
-      case 'admin-companies': return <AdminCompanyManager />; // <--- NEW SCREEN
+      case 'admin-companies': return <AdminCompanyManager />;
       
       // HR Views
       case 'hr-comments': return <HRPlaceholder />;
