@@ -7,13 +7,24 @@ export enum UserRole {
 
 export type MenuCategory = 'Protein' | 'Carbohydrate' | 'Sides' | 'Fibre' | 'Soup' | 'Vegetarian' | 'Sandwiches' | 'Special' | 'Condiments';
 
+// --- NEW COMPANY INTERFACE ---
+export interface Company {
+  id: string;
+  name: string;
+  logoUrl: string;
+  primaryColor: string;   // Hex code e.g. #eab308
+  secondaryColor: string; // Hex code
+  welcomeMessage: string;
+}
+
 export interface MenuItem {
   id: string;
   name: string;
   description: string;
   category: string;
   calories: number;
-  dietaryInfo?: string[]; // e.g. ['Vegan', 'Spicy']
+  dietaryInfo?: string[];
+  companyId?: string; // Link to company
 }
 
 export interface MasterFoodItem extends MenuItem {
@@ -26,6 +37,8 @@ export interface DailyMenu {
   items: MenuItem[];
   notes?: string;
   departmentIds?: string[];
+  isClosed?: boolean;
+  companyId?: string; // Link to company
 }
 
 export interface Order {
@@ -37,6 +50,7 @@ export interface Order {
   specialInstructions?: string;
   status: 'Pending' | 'Confirmed' | 'Fulfilled' | 'Cancelled';
   timestamp: number;
+  companyId?: string; // Link to company
 }
 
 export interface MenuIssue {
@@ -48,6 +62,7 @@ export interface MenuIssue {
   chefResponse?: string;
   isReadByChef: boolean;
   timestamp: number;
+  companyId?: string; // Link to company
 }
 
 export interface User {
@@ -59,6 +74,7 @@ export interface User {
   email: string;
   isLocked: boolean;
   avatarUrl?: string;
+  companyId?: string; // Critical: Links user to their tenant
 }
 
 export interface Department {
@@ -89,5 +105,17 @@ export interface AppConfig {
   companyName: string;
   tagline: string;
   logoUrl: string;
-  orderCutoffTime: string; // NEW: e.g. "10:30"
+  orderCutoffTime: string;
+}
+
+export interface MenuTemplate {
+  id: string;
+  name: string;
+  items: MenuItem[];
+  notes?: string;
+  createdById: string;
+  createdByName: string;
+  isShared: boolean;
+  createdAt: string;
+  companyId?: string; // Link to company
 }
