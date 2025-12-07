@@ -107,7 +107,7 @@ export const AdminKitchenDashboard: React.FC = () => {
 };
 
 // =========================================================
-// 2. MENU MANAGER (With Menu Bank)
+// 2. MENU MANAGER
 // =========================================================
 export const AdminMenuManager: React.FC = () => {
   const { menus, masterFoodItems, addMenu, updateMenu, saveTemplate, loadTemplate, menuTemplates, deleteTemplate, currentUser } = useStore();
@@ -213,83 +213,4 @@ export const AdminMenuManager: React.FC = () => {
                   <select className="w-full p-3 border border-slate-600 rounded-lg bg-slate-900 text-white" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value as MenuCategory)}><option value="Protein">Protein</option><option value="Carbohydrate">Carbohydrate</option><option value="Sides">Sides</option><option value="Fibre">Fibre / Vegetable</option><option value="Soup">Soup</option><option value="Vegetarian">Vegetarian</option><option value="Sandwiches">Sandwiches</option><option value="Special">Special</option></select>
               </div>
               <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">2. Select Food Item</label>
-                  <select className="w-full p-3 border border-slate-600 rounded-lg bg-slate-900 text-white" value={selectedMasterItemId} onChange={(e) => setSelectedMasterItemId(e.target.value)}><option value="">-- Select Item --</option>{dropdownOptions.map(item => (<option key={item.id} value={item.id}>{item.name}</option>))}</select>
-              </div>
-              <button onClick={handleAddItem} disabled={!selectedMasterItemId} className={`w-full py-3 rounded-lg font-bold text-white shadow-md transition-all flex items-center justify-center ${selectedMasterItemId ? 'bg-green-600 hover:bg-green-700 hover:-translate-y-1' : 'bg-slate-700 cursor-not-allowed text-slate-500'}`}><Plus className="w-5 h-5 mr-2" /> Add Item</button>
-          </div>
-      </div>
-
-      <div className="space-y-4">
-          <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold text-blue-400">Preview: {formatDateDisplay(selectedDate)}</h3>
-              <span className="text-xs font-bold bg-red-900/50 text-red-200 px-3 py-1.5 rounded border border-red-800 uppercase tracking-wide">Click items below to remove them</span>
-          </div>
-          <div className="relative group ring-4 ring-slate-800 rounded-xl p-1"><MenuGrid items={menuItems} selectedItemIds={[]} onItemClick={(id) => { if(confirm("Remove this item from the menu?")) handleRemoveItem(id); }} /></div>
-      </div>
-
-      {isTemplateModalOpen && (
-          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-              <div className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-700">
-                  <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900">
-                      <h3 className="font-bold text-lg text-white">{mode === 'SAVE' ? 'Save to Bank' : 'Load from Bank'}</h3>
-                      <button onClick={() => setIsTemplateModalOpen(false)} className="text-slate-400 hover:text-white">Close</button>
-                  </div>
-                  <div className="p-6">
-                      {mode === 'SAVE' ? (
-                          <div className="space-y-4">
-                              <input type="text" placeholder="Template Name (e.g. Jerk Chicken Special)" className="w-full p-3 border border-slate-600 rounded-lg bg-slate-900 text-white outline-none" value={newTemplateName} onChange={e => setNewTemplateName(e.target.value)} />
-                              <div className="flex items-center"><input type="checkbox" id="share" checked={isShared} onChange={e => setIsShared(e.target.checked)} className="w-5 h-5 text-blue-600 rounded bg-slate-900 border-slate-600" /><label htmlFor="share" className="ml-2 text-slate-300 font-medium">Share with Kitchen Team?</label></div>
-                              <button onClick={handleSaveTemplate} className="w-full bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700">Save Menu</button>
-                          </div>
-                      ) : (
-                          <div className="max-h-[400px] overflow-y-auto space-y-2">
-                              {menuTemplates.length === 0 && <p className="text-center text-slate-500">No saved menus.</p>}
-                              {menuTemplates.map(tpl => (
-                                  <div key={tpl.id} className="flex items-center justify-between p-3 border border-slate-700 rounded-lg hover:bg-slate-700 transition-colors group cursor-pointer" onClick={() => { loadTemplate(tpl.id, selectedDate); setIsTemplateModalOpen(false); }}>
-                                      <div className="flex-1">
-                                          <p className="font-bold text-white">{tpl.name}</p>
-                                          <p className="text-xs text-slate-400 mt-1">Saved by {tpl.createdByName} • {new Date(tpl.createdAt).toLocaleDateString()}</p>
-                                      </div>
-                                      {(tpl.createdById === currentUser?.id || currentUser?.role === 'SUPER_ADMIN') && (<button onClick={(e) => { e.stopPropagation(); deleteTemplate(tpl.id); }} className="p-2 text-red-400 hover:text-red-200 hover:bg-red-900/30 rounded-full"><Trash2 className="w-4 h-4" /></button>)}
-                                  </div>
-                              ))}
-                          </div>
-                      )}
-                  </div>
-              </div>
-          </div>
-      )}
-    </div>
-  );
-};
-
-// =========================================================
-// 3. KITCHEN MASTER DATABASE
-// =========================================================
-export const KitchenMasterDatabase: React.FC = () => {
-  const { masterFoodItems, addMasterItem, updateMasterItem, deleteMasterItem } = useStore();
-  const [name, setName] = useState('');
-  const [category, setCategory] = useState<MenuCategory>('Protein');
-  const [search, setSearch] = useState('');
-  const [editingId, setEditingId] = useState<string | null>(null);
-
-  const handleSubmit = () => {
-      if(!name.trim()) return;
-      if (editingId) {
-          const oldItem = masterFoodItems.find(i => i.id === editingId);
-          if (oldItem) { updateMasterItem({ ...oldItem, name: name, category: category }); alert("Item updated."); }
-          setEditingId(null);
-      } else {
-          addMasterItem({ id: 'mfi_' + Date.now(), name, category, description: 'Chef Added', calories: 0, dietaryInfo: [], isAvailable: true });
-          alert("Item added.");
-      }
-      setName('');
-  };
-
-  const handleEditClick = (item: MasterFoodItem) => {
-      setEditingId(item.id); setName(item.name); setCategory(item.category as MenuCategory);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const filteredItems = masterFoodItems.filter(i => i.name.toLowerCase().includes(search.toLowerCase()) ||
+                  <label className="block text-xs font-bold text-slate
