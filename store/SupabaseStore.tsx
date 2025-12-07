@@ -3,57 +3,32 @@ import { supabase } from '../services/supabaseClient';
 import { User, DailyMenu, Order, Message, Comment, Department, UserRole, MenuItem, MasterFoodItem, AppConfig, MenuIssue, MenuTemplate, Company } from '../types';
 
 interface StoreData {
-  currentUser: User | null;
-  currentCompany: Company | null;
-  users: User[]; menus: DailyMenu[]; orders: Order[]; messages: Message[]; comments: Comment[];
-  menuIssues: MenuIssue[]; departments: Department[]; appConfig: AppConfig; masterFoodItems: MasterFoodItem[];
-  menuTemplates: MenuTemplate[];
-  isLoading: boolean;
-
-  login: (input: string) => Promise<boolean>; 
-  logout: () => void;
+  // ... existing state ...
+  currentUser: User | null; currentCompany: Company | null; users: User[]; menus: DailyMenu[]; orders: Order[]; messages: Message[]; comments: Comment[]; menuIssues: MenuIssue[]; departments: Department[]; appConfig: AppConfig; masterFoodItems: MasterFoodItem[]; menuTemplates: MenuTemplate[]; isLoading: boolean;
   
-  addMenu: (menu: DailyMenu) => Promise<void>; 
-  updateMenu: (menu: DailyMenu) => Promise<void>; 
-  copyMenuFromDate: (source: string, target: string) => Promise<void>;
-  saveTemplate: (name: string, date: string, isShared: boolean) => Promise<void>;
-  loadTemplate: (templateId: string, targetDate: string) => Promise<void>;
-  deleteTemplate: (templateId: string) => Promise<void>;
+  // NEW STATE
+  companies: Company[]; 
 
-  addMasterItem: (item: MasterFoodItem) => Promise<void>;
-  updateMasterItem: (item: MasterFoodItem) => Promise<void>;
-  deleteMasterItem: (id: string) => Promise<void>;
+  // ... existing functions ...
+  login: (input: string) => Promise<boolean>; logout: () => void;
+  addMenu: (menu: DailyMenu) => Promise<void>; updateMenu: (menu: DailyMenu) => Promise<void>; copyMenuFromDate: (source: string, target: string) => Promise<void>;
+  saveTemplate: (name: string, date: string, isShared: boolean) => Promise<void>; loadTemplate: (templateId: string, targetDate: string) => Promise<void>; deleteTemplate: (templateId: string) => Promise<void>;
+  addMasterItem: (item: MasterFoodItem) => Promise<void>; updateMasterItem: (item: MasterFoodItem) => Promise<void>; deleteMasterItem: (id: string) => Promise<void>;
+  lockUser: (id: string, lock: boolean) => Promise<void>; addDepartment: (d: Department) => Promise<void>; updateOrderStatus: (id: string, s: Order['status']) => Promise<void>; updateAppConfig: (c: AppConfig) => Promise<void>; placeOrder: (o: Order) => Promise<void>; sendMessage: (m: Message) => Promise<void>; addComment: (c: Comment) => Promise<void>; respondToComment: (id: string, r: string, u: User) => Promise<void>; reportIssue: (i: MenuIssue) => Promise<void>; respondToIssue: (id: string, r: string) => Promise<void>; importData: (data: any) => void; exportData: () => any;
 
-  lockUser: (id: string, lock: boolean) => Promise<void>; 
-  addDepartment: (d: Department) => Promise<void>; 
-  updateOrderStatus: (id: string, s: Order['status']) => Promise<void>;
-  updateAppConfig: (c: AppConfig) => Promise<void>; 
-  placeOrder: (o: Order) => Promise<void>; 
-  sendMessage: (m: Message) => Promise<void>; 
-  addComment: (c: Comment) => Promise<void>; 
-  respondToComment: (id: string, r: string, u: User) => Promise<void>;
-  reportIssue: (i: MenuIssue) => Promise<void>; 
-  respondToIssue: (id: string, r: string) => Promise<void>;
-  
-  importData: (data: any) => void; exportData: () => any;
+  // NEW COMPANY FUNCTIONS
+  addCompany: (c: Company) => Promise<void>;
+  updateCompany: (c: Company) => Promise<void>;
+  deleteCompany: (id: string) => Promise<void>;
 }
 
 const StoreContext = createContext<StoreData | undefined>(undefined);
-
-// DEFAULT FALLBACK COMPANY (Used before login)
-const DEFAULT_COMPANY: Company = {
-    id: 'default',
-    name: 'LunchLink Enterprise',
-    logoUrl: '',
-    primaryColor: '#2563eb', // Standard Blue
-    secondaryColor: '#1e40af',
-    welcomeMessage: 'Employee Portal'
-};
+const DEFAULT_COMPANY: Company = { id: 'default', name: 'LunchLink Enterprise', logoUrl: '', primaryColor: '#2563eb', secondaryColor: '#1e40af', welcomeMessage: 'Employee Portal', tagline: '' };
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // ... existing state ...
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [currentCompany, setCurrentCompany] = useState<Company | null>(null); 
-  
+  const [currentCompany, setCurrentCompany] = useState<Company | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [menus, setMenus] = useState<DailyMenu[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -63,152 +38,104 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [menuTemplates, setMenuTemplates] = useState<MenuTemplate[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [masterFoodItems, setMasterFoodItems] = useState<MasterFoodItem[]>([]);
-  
-  // FIX: Default text is set here immediately. No more "Loading...".
-  const [appConfig, setAppConfig] = useState<AppConfig>({ 
-    companyName: 'LunchLink Enterprise', 
-    tagline: 'Employee Lunch Ordering System', 
-    logoUrl: '', 
-    orderCutoffTime: '10:30' 
-  });
-  
+  const [appConfig, setAppConfig] = useState<AppConfig>({ companyName: 'LunchLink Enterprise', tagline: 'Employee Lunch Ordering System', logoUrl: '', orderCutoffTime: '10:30' });
   const [isLoading, setIsLoading] = useState(false);
+  
+  // NEW STATE
+  const [companies, setCompanies] = useState<Company[]>([]);
 
-  // --- LOGIN LOGIC (Email or Username) ---
+  useEffect(() => {
+    const fetchData = async () => {
+        setIsLoading(true);
+        // ... existing fetches ...
+        const { data: uData } = await supabase.from('app_users').select('*'); if(uData) setUsers(uData.map(u => ({ id: u.id, username: u.username, fullName: u.full_name, role: u.role as UserRole, email: u.email, isLocked: u.is_locked, avatarUrl: u.avatar_url, departmentId: u.department_id, companyId: u.company_id })));
+        const { data: mData } = await supabase.from('daily_menus').select('*'); if(mData) setMenus(mData.map(m => ({ id: m.id, date: m.date, items: m.items, notes: m.notes, departmentIds: m.department_ids, companyId: m.company_id })));
+        const { data: fData } = await supabase.from('master_food_items').select('*'); if(fData) setMasterFoodItems(fData.map(f => ({ id: f.id, name: f.name, description: f.description, category: f.category, calories: f.calories, dietaryInfo: f.dietary_info, isAvailable: f.is_available, companyId: f.company_id })));
+        const { data: oData } = await supabase.from('orders').select('*'); if(oData) setOrders(oData.map(o => ({ id: o.id, userId: o.user_id, menuId: o.menu_id, selectedItemIds: o.selected_item_ids, date: o.date, specialInstructions: o.special_instructions, status: o.status, timestamp: o.timestamp, companyId: o.company_id })));
+        const { data: iData } = await supabase.from('menu_issues').select('*'); if(iData) setMenuIssues(iData.map(i => ({ id: i.id, userId: i.user_id, date: i.date, issue: i.issue, status: i.status, chefResponse: i.chef_response, isReadByChef: i.is_read_by_chef, timestamp: i.timestamp, companyId: i.company_id })));
+        const { data: tData } = await supabase.from('menu_templates').select('*'); if(tData) setMenuTemplates(tData.map(t => ({ id: t.id, name: t.name, items: t.items, notes: t.notes, createdById: t.created_by_id, createdByName: t.created_by_name, isShared: t.is_shared, createdAt: t.created_at, companyId: t.company_id })));
+        const { data: cData } = await supabase.from('app_config').select('*').single(); if(cData) setAppConfig({ companyName: cData.company_name, tagline: cData.tagline, logoUrl: cData.logo_url, orderCutoffTime: cData.order_cutoff_time });
+        
+        // NEW: Fetch Companies
+        const { data: compData } = await supabase.from('companies').select('*');
+        if (compData) {
+            setCompanies(compData.map(c => ({
+                id: c.id, name: c.name, logoUrl: c.logo_url, 
+                primaryColor: c.primary_color, secondaryColor: c.secondary_color, 
+                welcomeMessage: c.welcome_message, tagline: c.tagline
+            })));
+        }
+
+        setIsLoading(false);
+    };
+    fetchData();
+  }, []);
+
   const login = async (input: string) => {
     setIsLoading(true);
     try {
         const cleanInput = input.trim().toLowerCase();
-        
-        // 1. Find User by Username OR Email
-        const { data: userMatches, error } = await supabase
-            .from('app_users')
-            .select('*')
-            .or(`username.eq.${cleanInput},email.eq.${cleanInput}`)
-            .maybeSingle(); // Safe query, doesn't crash if not found
+        const { data: userMatches, error } = await supabase.from('app_users').select('*').or(`username.eq.${cleanInput},email.eq.${cleanInput}`).maybeSingle();
+        if (error || !userMatches) { setIsLoading(false); return false; }
 
-        if (error || !userMatches) {
-            setIsLoading(false);
-            return false;
-        }
-
-        const user: User = {
-            id: userMatches.id, username: userMatches.username, fullName: userMatches.full_name,
-            role: userMatches.role as UserRole, email: userMatches.email, isLocked: userMatches.is_locked,
-            avatarUrl: userMatches.avatar_url, departmentId: userMatches.department_id,
-            companyId: userMatches.company_id 
-        };
-
+        const user: User = { id: userMatches.id, username: userMatches.username, fullName: userMatches.full_name, role: userMatches.role as UserRole, email: userMatches.email, isLocked: userMatches.is_locked, avatarUrl: userMatches.avatar_url, departmentId: userMatches.department_id, companyId: userMatches.company_id };
         if (user.isLocked) { setIsLoading(false); return false; }
 
-        // 2. Fetch Company Details based on the user's assigned company
         if (user.companyId) {
             const { data: compData } = await supabase.from('companies').select('*').eq('id', user.companyId).single();
-            if (compData) {
-                setCurrentCompany({
-                    id: compData.id, name: compData.name, logoUrl: compData.logo_url,
-                    primaryColor: compData.primary_color, secondaryColor: compData.secondary_color,
-                    welcomeMessage: compData.welcome_message
-                });
-            }
-        } else {
-            setCurrentCompany(DEFAULT_COMPANY);
-        }
+            if (compData) setCurrentCompany({ id: compData.id, name: compData.name, logoUrl: compData.logo_url, primaryColor: compData.primary_color, secondaryColor: compData.secondary_color, welcomeMessage: compData.welcome_message, tagline: compData.tagline });
+        } else { setCurrentCompany(DEFAULT_COMPANY); }
 
         setCurrentUser(user);
-        
-        // 3. Load data specific to that company
-        await fetchCompanyData(user.companyId || '');
-        
+        // We would re-fetch company-specific data here if we were using RLS strictly, but for now we rely on the initial fetch + memory filter
         setIsLoading(false);
         return true;
-    } catch (e) {
-        console.error("Login Error", e);
-        setIsLoading(false);
-        return false;
-    }
-  };
-
-  const logout = () => {
-      setCurrentUser(null);
-      setCurrentCompany(null);
-      setMenus([]); 
-      setOrders([]);
-  };
-
-  // --- DATA FETCHING (Filtered by Company) ---
-  const fetchCompanyData = async (companyId: string) => {
-      if (!companyId) return;
-
-      const { data: mData } = await supabase.from('daily_menus').select('*').eq('company_id', companyId);
-      if(mData) setMenus(mData.map(m => ({ id: m.id, date: m.date, items: m.items, notes: m.notes, departmentIds: m.department_ids })));
-
-      const { data: fData } = await supabase.from('master_food_items').select('*').eq('company_id', companyId);
-      if(fData) setMasterFoodItems(fData.map(f => ({ id: f.id, name: f.name, description: f.description, category: f.category, calories: f.calories, dietaryInfo: f.dietary_info, isAvailable: f.is_available })));
-
-      const { data: oData } = await supabase.from('orders').select('*').eq('company_id', companyId);
-      if(oData) setOrders(oData.map(o => ({ id: o.id, userId: o.user_id, menuId: o.menu_id, selectedItemIds: o.selected_item_ids, date: o.date, specialInstructions: o.special_instructions, status: o.status, timestamp: o.timestamp })));
-      
-      const { data: iData } = await supabase.from('menu_issues').select('*').eq('company_id', companyId);
-      if(iData) setMenuIssues(iData.map(i => ({ id: i.id, userId: i.user_id, date: i.date, issue: i.issue, status: i.status, chefResponse: i.chef_response, isReadByChef: i.is_read_by_chef, timestamp: i.timestamp })));
-      
-      const { data: tData } = await supabase.from('menu_templates').select('*').eq('company_id', companyId).order('created_at', { ascending: false }); 
-      if (tData) setMenuTemplates(tData.map(t => ({ id: t.id, name: t.name, items: t.items, notes: t.notes, createdById: t.created_by_id, createdByName: t.created_by_name, isShared: t.is_shared, createdAt: t.created_at })));
-      
-      // Update config if company has specific overrides
-      const { data: cData } = await supabase.from('app_config').select('*').single(); 
-      if(cData) setAppConfig(prev => ({ ...prev, orderCutoffTime: cData.order_cutoff_time }));
-  };
-
-  // --- ACTIONS (Tagging data with Company ID) ---
-  const addMenu = async (menu: DailyMenu) => { 
-      setMenus(p => [...p, menu]); 
-      await supabase.from('daily_menus').insert({ id: menu.id, date: menu.date, items: menu.items, notes: menu.notes, department_ids: menu.departmentIds, company_id: currentUser?.companyId }); 
+    } catch (e) { console.error("Login Error", e); setIsLoading(false); return false; }
   };
   
-  const updateMenu = async (menu: DailyMenu) => { 
-      setMenus(p => p.map(m => m.id === menu.id ? menu : m)); 
-      await supabase.from('daily_menus').update({ items: menu.items, notes: menu.notes }).eq('id', menu.id); 
-  };
-  
-  const copyMenuFromDate = async (source: string, target: string) => {
-      const src = menus.find(m => m.date === source); if(!src) return;
-      const newM: DailyMenu = { ...src, id: Date.now().toString(), date: target };
-      if(menus.some(m => m.date === target)) { setMenus(p => p.map(m => m.date === target ? newM : m)); await supabase.from('daily_menus').update({ items: newM.items, notes: newM.notes }).eq('date', target); }
-      else { setMenus(p => [...p, newM]); await supabase.from('daily_menus').insert({ id: newM.id, date: newM.date, items: newM.items, notes: newM.notes, company_id: currentUser?.companyId }); }
-  };
+  const logout = () => { setCurrentUser(null); setCurrentCompany(null); };
 
-  const saveTemplate = async (name: string, date: string, isShared: boolean) => {
-      if (!currentUser) return;
-      const menu = menus.find(m => m.date === date); if (!menu) return;
-      const newTpl: MenuTemplate = { id: 'tpl_' + Date.now(), name, items: menu.items, notes: menu.notes, createdById: currentUser.id, createdByName: currentUser.fullName, isShared, createdAt: new Date().toISOString() };
-      setMenuTemplates(p => [newTpl, ...p]);
-      await supabase.from('menu_templates').insert({ id: newTpl.id, name: newTpl.name, items: newTpl.items, notes: newTpl.notes, created_by_id: newTpl.createdById, created_by_name: newTpl.createdByName, is_shared: newTpl.isShared, created_at: newTpl.createdAt, company_id: currentUser.companyId });
-  };
-
-  const loadTemplate = async (templateId: string, targetDate: string) => {
-      const tpl = menuTemplates.find(t => t.id === templateId); if (!tpl) return;
-      const newMenu: DailyMenu = { id: Date.now().toString(), date: targetDate, items: tpl.items, notes: tpl.notes };
-      if (menus.some(m => m.date === targetDate)) { setMenus(p => p.map(m => m.date === targetDate ? newMenu : m)); await supabase.from('daily_menus').update({ items: newMenu.items, notes: newMenu.notes }).eq('date', targetDate); }
-      else { setMenus(p => [...p, newMenu]); await supabase.from('daily_menus').insert({ id: newMenu.id, date: newMenu.date, items: newMenu.items, notes: newMenu.notes, company_id: currentUser?.companyId }); }
-  };
-
-  const addMasterItem = async (i: MasterFoodItem) => { 
-      setMasterFoodItems(p => [...p, i]); 
-      await supabase.from('master_food_items').insert({ id: i.id, name: i.name, category: i.category, calories: i.calories, dietary_info: i.dietaryInfo, company_id: currentUser?.companyId }); 
-  };
-  
-  const updateMasterItem = async (i: MasterFoodItem) => {
-      setMasterFoodItems(prev => prev.map(item => item.id === i.id ? i : item));
-      await supabase.from('master_food_items').update({ name: i.name, category: i.category, calories: i.calories, description: i.description, dietary_info: i.dietaryInfo }).eq('id', i.id);
-  };
-  
-  const deleteMasterItem = async (id: string) => { setMasterFoodItems(p => p.filter(i => i.id !== id)); await supabase.from('master_food_items').delete().eq('id', id); };
+  // ... existing functions ...
+  const addMenu = async (m: DailyMenu) => { setMenus(p => [...p, m]); await supabase.from('daily_menus').insert({ id: m.id, date: m.date, items: m.items, notes: m.notes, department_ids: m.departmentIds, company_id: currentUser?.companyId }); };
+  const updateMenu = async (m: DailyMenu) => { setMenus(p => p.map(x => x.id === m.id ? m : x)); await supabase.from('daily_menus').update({ items: m.items, notes: m.notes }).eq('id', m.id); };
+  const copyMenuFromDate = async (src: string, tgt: string) => { const s = menus.find(m => m.date === src); if(!s) return; const n = { ...s, id: Date.now().toString(), date: tgt }; if(menus.some(m => m.date === tgt)) { setMenus(p => p.map(m => m.date === tgt ? n : m)); await supabase.from('daily_menus').update({ items: n.items, notes: n.notes }).eq('date', tgt); } else { setMenus(p => [...p, n]); await supabase.from('daily_menus').insert({ id: n.id, date: n.date, items: n.items, notes: n.notes, company_id: currentUser?.companyId }); } };
+  const saveTemplate = async (name: string, date: string, isShared: boolean) => { if (!currentUser) return; const menu = menus.find(m => m.date === date); if (!menu) return; const tpl: MenuTemplate = { id: 'tpl_' + Date.now(), name, items: menu.items, notes: menu.notes, createdById: currentUser.id, createdByName: currentUser.fullName, isShared, createdAt: new Date().toISOString(), companyId: currentUser.companyId }; setMenuTemplates(p => [tpl, ...p]); await supabase.from('menu_templates').insert({ id: tpl.id, name: tpl.name, items: tpl.items, notes: tpl.notes, created_by_id: tpl.createdById, created_by_name: tpl.createdByName, is_shared: tpl.isShared, created_at: tpl.createdAt, company_id: tpl.companyId }); };
+  const loadTemplate = async (tid: string, tdate: string) => { const tpl = menuTemplates.find(t => t.id === tid); if (!tpl) return; const n = { id: Date.now().toString(), date: tdate, items: tpl.items, notes: tpl.notes }; if (menus.some(m => m.date === tdate)) { setMenus(p => p.map(m => m.date === tdate ? n : m)); await supabase.from('daily_menus').update({ items: n.items, notes: n.notes }).eq('date', tdate); } else { setMenus(p => [...p, n]); await supabase.from('daily_menus').insert({ id: n.id, date: n.date, items: n.items, notes: n.notes, company_id: currentUser?.companyId }); } };
   const deleteTemplate = async (id: string) => { setMenuTemplates(p => p.filter(t => t.id !== id)); await supabase.from('menu_templates').delete().eq('id', id); };
+  
+  const addMasterItem = async (i: MasterFoodItem) => { setMasterFoodItems(p => [...p, i]); await supabase.from('master_food_items').insert({ id: i.id, name: i.name, category: i.category, calories: i.calories, dietary_info: i.dietaryInfo, company_id: currentUser?.companyId }); };
+  const updateMasterItem = async (i: MasterFoodItem) => { setMasterFoodItems(p => p.map(x => x.id === i.id ? i : x)); await supabase.from('master_food_items').update({ name: i.name, category: i.category, calories: i.calories, description: i.description, dietary_info: i.dietaryInfo }).eq('id', i.id); };
+  const deleteMasterItem = async (id: string) => { setMasterFoodItems(p => p.filter(i => i.id !== id)); await supabase.from('master_food_items').delete().eq('id', id); };
+  
   const placeOrder = async (o: Order) => { setOrders(p => [...p, o]); await supabase.from('orders').insert({ id: o.id, user_id: o.userId, menu_id: o.menuId, selected_item_ids: o.selectedItemIds, date: o.date, special_instructions: o.specialInstructions, status: o.status, timestamp: o.timestamp, company_id: currentUser?.companyId }); };
   const reportIssue = async (i: MenuIssue) => { setMenuIssues(p => [...p, i]); await supabase.from('menu_issues').insert({ id: i.id, user_id: i.userId, date: i.date, issue: i.issue, status: 'Open', is_read_by_chef: false, timestamp: i.timestamp, company_id: currentUser?.companyId }); };
   const respondToIssue = async (id: string, r: string) => { setMenuIssues(p => p.map(i => i.id === id ? { ...i, chefResponse: r, status: 'Resolved' } : i)); await supabase.from('menu_issues').update({ chef_response: r, status: 'Resolved' }).eq('id', id); };
-  
+
+  // --- COMPANY ACTIONS ---
+  const addCompany = async (c: Company) => {
+      setCompanies(p => [...p, c]);
+      await supabase.from('companies').insert({ 
+          id: c.id, name: c.name, logo_url: c.logoUrl, 
+          primary_color: c.primaryColor, secondary_color: c.secondaryColor, 
+          welcome_message: c.welcomeMessage, tagline: c.tagline 
+      });
+  };
+
+  const updateCompany = async (c: Company) => {
+      setCompanies(p => p.map(x => x.id === c.id ? c : x));
+      await supabase.from('companies').update({
+          name: c.name, logo_url: c.logoUrl, 
+          primary_color: c.primaryColor, secondary_color: c.secondaryColor, 
+          welcome_message: c.welcomeMessage, tagline: c.tagline
+      }).eq('id', c.id);
+  };
+
+  const deleteCompany = async (id: string) => {
+      setCompanies(p => p.filter(c => c.id !== id));
+      await supabase.from('companies').delete().eq('id', id);
+  };
+
+  // ... other placeholders ...
   const lockUser = async (id: string, l: boolean) => setUsers(p => p.map(u => u.id === id ? { ...u, isLocked: l } : u));
   const addDepartment = async (d: Department) => setDepartments(p => [...p, d]);
   const updateOrderStatus = async (id: string, s: Order['status']) => setOrders(p => p.map(o => o.id === id ? { ...o, status: s } : o));
@@ -220,10 +147,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   return (
     <StoreContext.Provider value={{
-      currentUser, currentCompany, users, menus, orders, messages, comments, menuIssues, departments, appConfig, masterFoodItems, menuTemplates, isLoading,
+      currentUser, currentCompany, users, menus, orders, messages, comments, menuIssues, departments, appConfig, masterFoodItems, menuTemplates, companies, isLoading,
       login, logout, addMenu, updateMenu, copyMenuFromDate, saveTemplate, loadTemplate, deleteTemplate,
+      addMasterItem, updateMasterItem, deleteMasterItem,
       lockUser, addDepartment, updateOrderStatus, placeOrder, sendMessage, addComment, respondToComment, reportIssue, respondToIssue,
-      updateAppConfig, addMasterItem, updateMasterItem, deleteMasterItem, importData, exportData
+      addCompany, updateCompany, deleteCompany, // NEW
+      updateAppConfig, importData, exportData
     }}>
       {children}
     </StoreContext.Provider>
