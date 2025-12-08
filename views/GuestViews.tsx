@@ -223,4 +223,32 @@ export const GuestPortal: React.FC = () => {
             <div className="relative">
                 <Key className="w-5 h-5 text-slate-500 absolute left-3 top-3.5" />
                 <input 
-                    type="text"
+                    type="text" 
+                    value={passcode} 
+                    onChange={e => setPasscode(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-white font-mono tracking-widest placeholder-slate-700"
+                    placeholder="XXXX"
+                />
+            </div>
+            <p className="text-xs text-slate-500 mt-2 text-right">Ask reception for today's code.</p>
+          </div>
+
+          <button 
+              type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition-transform active:scale-[0.98] mt-4"
+          >
+              Unlock Menu
+          </button>
+          
+          <button 
+              type="button" 
+              onClick={logout}
+              className="w-full text-center text-sm text-slate-500 hover:text-slate-300 mt-4 transition-colors"
+          >
+              Cancel
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
