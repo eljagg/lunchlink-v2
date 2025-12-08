@@ -4,56 +4,49 @@ import Login from './views/Login';
 import Layout from './components/Layout';
 import { OrderLunchView, OrderHistoryView, MessagesView, FeedbackView } from './views/EmployeeViews'; 
 import { AdminKitchenDashboard, AdminMenuManager, KitchenMasterDatabase, AdminUserManager, AdminDepts, AdminCompanyManager, AdminAppConfig } from './views/AdminViews';
+// NEW IMPORT
+import { GuestPortal } from './views/GuestViews';
 import { UserRole } from './types';
 
-const DashboardStats: React.FC = () => {
-    return <div className="p-8 text-white">Select an option from the menu.</div>;
-};
-
+const DashboardStats: React.FC = () => <div className="p-8 text-white">Select an option from the menu.</div>;
 const HRPlaceholder: React.FC = () => <div className="p-8 text-white">HR Views coming soon...</div>;
 
 const MainContent: React.FC = () => {
   const { currentUser } = useStore();
   
-  const [activeView, setActiveView] = useState(() => 
-    currentUser?.role === UserRole.EMPLOYEE ? 'order' : 'dashboard'
-  );
+  const [activeView, setActiveView] = useState('dashboard');
 
   useEffect(() => {
     if (currentUser) {
         if (currentUser.role === UserRole.EMPLOYEE) setActiveView('order');
         else if (currentUser.role === UserRole.KITCHEN_ADMIN) setActiveView('admin-kitchen');
+        else if (currentUser.role === UserRole.GUEST) setActiveView('guest-portal'); // New Role
         else setActiveView('dashboard');
     }
   }, [currentUser]);
 
   if (!currentUser) return <Login />;
 
+  // Special Case: Guest Portal has its own layout (Full Screen)
+  if (activeView === 'guest-portal') {
+      return <GuestPortal />;
+  }
+
   const renderView = () => {
     switch(activeView) {
       case 'dashboard': return <DashboardStats />;
-      // Employee
       case 'order': return <OrderLunchView />;
       case 'history': return <OrderHistoryView />;
       case 'messages': return <MessagesView />;
       case 'comments': return <FeedbackView />;
-      
-      // Kitchen Admin
       case 'admin-kitchen': return <AdminKitchenDashboard />;
       case 'admin-menus': return <AdminMenuManager />;
       case 'admin-food-db': return <KitchenMasterDatabase />;
-      
-      // Super Admin
       case 'admin-users': return <AdminUserManager />;
       case 'admin-depts': return <AdminDepts />;
       case 'admin-companies': return <AdminCompanyManager />;
-      
-      // Shared Config (Chef + Admin)
       case 'admin-config': return <AdminAppConfig />;
-      
-      // HR
       case 'hr-comments': return <HRPlaceholder />;
-      
       default: return <DashboardStats />;
     }
   };
