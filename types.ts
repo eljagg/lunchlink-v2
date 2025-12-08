@@ -1,16 +1,19 @@
+// ============================================================================
+// 1. TYPES DEFINITION (The "Contract")
+// ============================================================================
+
 export enum UserRole {
   SUPER_ADMIN = 'SUPER_ADMIN',
   KITCHEN_ADMIN = 'KITCHEN_ADMIN',
   HR = 'HR',
-  EMPLOYEE = 'EMPLOYEE'
+  EMPLOYEE = 'EMPLOYEE',
+  GUEST = 'GUEST' // <--- New Role for Guest Logic
 }
 
+// Columns for the Menu Grid
 export type MenuCategory = 'Protein' | 'Carbohydrate' | 'Sides' | 'Fibre' | 'Soup' | 'Vegetarian' | 'Sandwiches' | 'Special' | 'Condiments';
 
-// --- NEW COMPANY INTERFACE ---
-// ... (Keep existing Enums)
-
-// UPDATED COMPANY INTERFACE
+// --- COMPANY & BRANDING ---
 export interface Company {
   id: string;
   name: string;
@@ -18,60 +21,64 @@ export interface Company {
   primaryColor: string;
   secondaryColor: string;
   welcomeMessage: string;
-  tagline?: string; // <--- NEW FIELD
+  tagline?: string;
 }
 
-// ... (Keep the rest of the file exactly as it was)
-export enum UserRole { SUPER_ADMIN = 'SUPER_ADMIN', KITCHEN_ADMIN = 'KITCHEN_ADMIN', HR = 'HR', EMPLOYEE = 'EMPLOYEE' }
-export type MenuCategory = 'Protein' | 'Carbohydrate' | 'Sides' | 'Fibre' | 'Soup' | 'Vegetarian' | 'Sandwiches' | 'Special' | 'Condiments';
-export interface MenuItem { id: string; name: string; description: string; category: string; calories: number; dietaryInfo?: string[]; companyId?: string; }
-export interface MasterFoodItem extends MenuItem { isAvailable?: boolean; }
-export interface DailyMenu { id: string; date: string; items: MenuItem[]; notes?: string; departmentIds?: string[]; isClosed?: boolean; companyId?: string; }
-export interface Order { id: string; userId: string; menuId: string; selectedItemIds: string[]; date: string; specialInstructions?: string; status: 'Pending' | 'Confirmed' | 'Fulfilled' | 'Cancelled'; timestamp: number; companyId?: string; }
-export interface MenuIssue { id: string; userId: string; date: string; issue: string; status: 'Open' | 'Resolved'; chefResponse?: string; isReadByChef: boolean; timestamp: number; companyId?: string; }
-export interface User { id: string; username: string; fullName: string; role: UserRole; departmentId?: string; email: string; isLocked: boolean; avatarUrl?: string; companyId?: string; }
-export interface Department { id: string; name: string; }
-export interface Message { id: string; fromUserId: string; fromUserName: string; toUserId: string; content: string; timestamp: number; read: boolean; }
-export interface Comment { id: string; userId: string; userName: string; content: string; timestamp: number; responses: any[]; }
-export interface AppConfig { companyName: string; tagline: string; logoUrl: string; orderCutoffTime: string; }
-export interface MenuTemplate { id: string; name: string; items: MenuItem[]; notes?: string; createdById: string; createdByName: string; isShared: boolean; createdAt: string; companyId?: string; }
-
+// --- FOOD ITEMS ---
 export interface MenuItem {
   id: string;
   name: string;
   description: string;
   category: string;
   calories: number;
-  dietaryInfo?: string[];
-  companyId?: string; // Link to company
+  dietaryInfo?: string[]; // e.g. ['Vegan', 'Spicy']
+  companyId?: string;
 }
 
 export interface MasterFoodItem extends MenuItem {
   isAvailable?: boolean;
 }
 
+// --- MENUS ---
 export interface DailyMenu {
   id: string;
-  date: string;
+  date: string; // YYYY-MM-DD
   items: MenuItem[];
   notes?: string;
   departmentIds?: string[];
   isClosed?: boolean;
-  companyId?: string; // Link to company
+  companyId?: string;
 }
 
+// --- MENU TEMPLATES (The Bank) ---
+export interface MenuTemplate {
+  id: string;
+  name: string;
+  items: MenuItem[];
+  notes?: string;
+  createdById: string;
+  createdByName: string;
+  isShared: boolean;
+  createdAt: string;
+  companyId?: string;
+}
+
+// --- ORDERS ---
 export interface Order {
   id: string;
-  userId: string;
+  userId?: string; // Made Optional for Guests
+  guestName?: string; // <--- New: For Guest Orders
+  guestHostEmail?: string; // <--- New: Who they are visiting
   menuId: string;
   selectedItemIds: string[];
   date: string;
   specialInstructions?: string;
   status: 'Pending' | 'Confirmed' | 'Fulfilled' | 'Cancelled';
   timestamp: number;
-  companyId?: string; // Link to company
+  companyId?: string;
 }
 
+// --- ISSUES & FEEDBACK ---
 export interface MenuIssue {
   id: string;
   userId: string;
@@ -81,24 +88,7 @@ export interface MenuIssue {
   chefResponse?: string;
   isReadByChef: boolean;
   timestamp: number;
-  companyId?: string; // Link to company
-}
-
-export interface User {
-  id: string;
-  username: string;
-  fullName: string;
-  role: UserRole;
-  departmentId?: string;
-  email: string;
-  isLocked: boolean;
-  avatarUrl?: string;
-  companyId?: string; // Critical: Links user to their tenant
-}
-
-export interface Department {
-  id: string;
-  name: string;
+  companyId?: string;
 }
 
 export interface Message {
@@ -120,21 +110,32 @@ export interface Comment {
   responses: any[];
 }
 
+// --- USERS & DEPTS ---
+export interface User {
+  id: string;
+  username: string;
+  fullName: string;
+  role: UserRole;
+  departmentId?: string;
+  email: string;
+  isLocked: boolean;
+  avatarUrl?: string;
+  companyId?: string;
+}
+
+export interface Department {
+  id: string;
+  name: string;
+}
+
+// --- GLOBAL CONFIG ---
 export interface AppConfig {
   companyName: string;
   tagline: string;
   logoUrl: string;
   orderCutoffTime: string;
-}
-
-export interface MenuTemplate {
-  id: string;
-  name: string;
-  items: MenuItem[];
-  notes?: string;
-  createdById: string;
-  createdByName: string;
-  isShared: boolean;
-  createdAt: string;
-  companyId?: string; // Link to company
+  // New Guest Settings
+  guestMode: 'PASSCODE' | 'HOST' | 'QR';
+  guestPasscode: string;
+  guestQrToken: string;
 }
