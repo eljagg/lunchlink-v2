@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/SupabaseStore';
 import { Order } from '../types';
-import { Utensils, User, Mail, Key, CheckCircle, ArrowRight, Building } from 'lucide-react';
+import { Utensils, User, Phone, Key, CheckCircle, ArrowRight, Building } from 'lucide-react'; // Added Phone icon
 import { MenuGrid } from '../components/MenuGrid';
 
 const toLocalISOString = (date: Date) => {
@@ -15,7 +15,7 @@ export const GuestPortal: React.FC = () => {
   // --- STATE ---
   const [step, setStep] = useState<'AUTH' | 'MENU' | 'SUCCESS'>('AUTH');
   const [guestName, setGuestName] = useState('');
-  const [hostEmail, setHostEmail] = useState('');
+  const [hostContact, setHostContact] = useState(''); // Renamed for clarity
   const [passcode, setPasscode] = useState('');
   const [selectedCompanyId, setSelectedCompanyId] = useState('');
   
@@ -25,14 +25,13 @@ export const GuestPortal: React.FC = () => {
   // --- LOGIC ---
   const today = toLocalISOString(new Date());
   
-  // Find menu for the selected company on today's date
   const activeMenu = menus.find(m => m.date === today && m.companyId === selectedCompanyId);
   const selectedCompany = companies.find(c => c.id === selectedCompanyId);
 
   const handleAuth = (e: React.FormEvent) => {
       e.preventDefault();
       
-      if (!guestName || !hostEmail || !selectedCompanyId || !passcode) {
+      if (!guestName || !hostContact || !selectedCompanyId || !passcode) {
           alert("Please fill in all fields.");
           return;
       }
@@ -53,12 +52,13 @@ export const GuestPortal: React.FC = () => {
           menuId: activeMenu.id,
           selectedItemIds: selectedItems,
           date: today,
-          specialInstructions: `GUEST: ${guestName} (Visiting: ${hostEmail})\nNote: ${specialInstructions}`,
+          // Updated to use the new "Host Contact" label in the notes
+          specialInstructions: `GUEST: ${guestName} (Host: ${hostContact})\nNote: ${specialInstructions}`,
           status: 'Pending',
           timestamp: Date.now(),
           companyId: selectedCompanyId,
           guestName: guestName,
-          guestHostEmail: hostEmail
+          guestHostEmail: hostContact // We store the contact info (email or phone) here
       };
 
       await placeGuestOrder(newOrder);
@@ -70,7 +70,7 @@ export const GuestPortal: React.FC = () => {
     else setSelectedItems([...selectedItems, id]);
   };
 
-  // --- RENDER: SUCCESS SCREEN (Dark Mode) ---
+  // --- RENDER: SUCCESS SCREEN ---
   if (step === 'SUCCESS') {
       return (
           <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
@@ -93,7 +93,7 @@ export const GuestPortal: React.FC = () => {
       );
   }
 
-  // --- RENDER: MENU SCREEN (Dark Mode) ---
+  // --- RENDER: MENU SCREEN ---
   if (step === 'MENU') {
       return (
           <div className="min-h-screen bg-slate-950 pb-32">
@@ -159,7 +159,6 @@ export const GuestPortal: React.FC = () => {
   // --- RENDER: AUTH SCREEN (Dark Mode) ---
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background Decor */}
       <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-900/20 rounded-full blur-3xl pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-indigo-900/10 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -176,13 +175,13 @@ export const GuestPortal: React.FC = () => {
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Visiting Company</label>
             <div className="relative">
-                <Building className="w-5 h-5 text-slate-500 absolute left-3 top-3.5" />
+                <Building className="w-5 h-5 text-slate-400 absolute left-3 top-3.5" />
                 <select 
                     value={selectedCompanyId}
                     onChange={e => setSelectedCompanyId(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none appearance-none text-white font-medium"
                 >
-                    <option value="">-- Select Company --</option>
+                    <option value="">-- Choose Company --</option>
                     {companies.map(c => (
                         <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
@@ -204,18 +203,21 @@ export const GuestPortal: React.FC = () => {
             </div>
           </div>
 
+          {/* UPDATED FIELD: Host Contact (Email or CUG) */}
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Host Email</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Host Contact Info (Email or CUG)</label>
             <div className="relative">
-                <Mail className="w-5 h-5 text-slate-500 absolute left-3 top-3.5" />
+                {/* Changed Icon to Phone to signify Contact/CUG */}
+                <Phone className="w-5 h-5 text-slate-400 absolute left-3 top-3.5" />
                 <input 
-                    type="email" 
-                    value={hostEmail} 
-                    onChange={e => setHostEmail(e.target.value)}
+                    type="text" // Changed from 'email' to 'text' to allow phone numbers
+                    value={hostContact} 
+                    onChange={e => setHostContact(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-white placeholder-slate-600"
-                    placeholder="host@company.com"
+                    placeholder="e.g. jane@facey.com or 876-555-1234"
                 />
             </div>
+            <p className="text-[10px] text-slate-500 mt-1 ml-1">Required for order verification.</p>
           </div>
 
           <div className="pt-2">
@@ -230,7 +232,7 @@ export const GuestPortal: React.FC = () => {
                     placeholder="XXXX"
                 />
             </div>
-            <p className="text-xs text-slate-500 mt-2 text-right">Ask reception for today's code.</p>
+            <p className="text-[10px] text-slate-500 mt-1 text-right">Ask reception for today's code.</p>
           </div>
 
           <button 
