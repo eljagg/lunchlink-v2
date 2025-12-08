@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/SupabaseStore';
 import { UserRole } from '../types';
-import { 
-  LayoutDashboard, Utensils, History, MessageSquare, Users, 
-  Building, LogOut, FileText, ChefHat, Database, Menu, X, Settings 
-} from 'lucide-react';
+import { LayoutDashboard, Utensils, History, MessageSquare, Users, Building, LogOut, FileText, ChefHat, Database, Menu, X, Settings } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -101,6 +98,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate }) => 
               <NavItem view="admin-menus" icon={Utensils} label="Manage Menus" />
               <NavItem view="admin-food-db" icon={Database} label="Food Database" />
               <NavItem view="messages" icon={MessageSquare} label="Message Box" />
+              <NavItem view="admin-config" icon={Settings} label="Kitchen Settings" /> {/* <--- NEW LINK FOR CHEF */}
             </>
           )}
 
@@ -110,7 +108,6 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate }) => 
               <NavItem view="admin-companies" icon={Building} label="Companies" />
               <NavItem view="admin-users" icon={Users} label="Manage Users" />
               <NavItem view="admin-depts" icon={Settings} label="Departments" />
-              <NavItem view="admin-config" icon={FileText} label="App Config" />
             </>
           )}
 
@@ -136,7 +133,6 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate }) => 
             <h1 className="text-2xl font-bold text-white capitalize">
                 {getHeaderTitle()}
             </h1>
-            {/* FIXED LINK: Now clickable and opens Employee Menu */}
             <button 
                 onClick={() => onNavigate('order')}
                 className="text-sm font-medium hover:underline transition-all" 
