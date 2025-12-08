@@ -3,15 +3,15 @@ import { StoreProvider, useStore } from './store/SupabaseStore';
 import Login from './views/Login';
 import Layout from './components/Layout';
 import { OrderLunchView, OrderHistoryView, MessagesView, FeedbackView } from './views/EmployeeViews'; 
-import { AdminKitchenDashboard, AdminMenuManager, KitchenMasterDatabase, AdminUserManager, AdminDepts, AdminCompanyManager } from './views/AdminViews';
-// FIXED IMPORT: Changed '../types' to './types' because they are in the same folder
+// IMPORT NEW CONFIG COMPONENT
+import { AdminKitchenDashboard, AdminMenuManager, KitchenMasterDatabase, AdminUserManager, AdminDepts, AdminCompanyManager, AdminAppConfig } from './views/AdminViews';
 import { UserRole } from './types';
 
 const DashboardStats: React.FC = () => {
-    return <div className="p-4 bg-white rounded shadow">Dashboard Stats Placeholder</div>;
+    return <div className="p-8 text-white">Select an option from the menu.</div>;
 };
 
-const HRPlaceholder: React.FC = () => <div className="p-8">HR Views coming soon...</div>;
+const HRPlaceholder: React.FC = () => <div className="p-8 text-white">HR Views coming soon...</div>;
 
 const MainContent: React.FC = () => {
   const { currentUser } = useStore();
@@ -22,7 +22,6 @@ const MainContent: React.FC = () => {
 
   useEffect(() => {
     if (currentUser) {
-        // Default views based on Role
         if (currentUser.role === UserRole.EMPLOYEE) setActiveView('order');
         else if (currentUser.role === UserRole.KITCHEN_ADMIN) setActiveView('admin-kitchen');
         else setActiveView('dashboard');
@@ -34,24 +33,24 @@ const MainContent: React.FC = () => {
   const renderView = () => {
     switch(activeView) {
       case 'dashboard': return <DashboardStats />;
-      
-      // Employee Views
+      // Employee
       case 'order': return <OrderLunchView />;
       case 'history': return <OrderHistoryView />;
       case 'messages': return <MessagesView />;
       case 'comments': return <FeedbackView />;
       
-      // Kitchen Admin Views
+      // Kitchen Admin
       case 'admin-kitchen': return <AdminKitchenDashboard />;
       case 'admin-menus': return <AdminMenuManager />;
       case 'admin-food-db': return <KitchenMasterDatabase />;
       
-      // Super Admin Views
+      // Super Admin
       case 'admin-users': return <AdminUserManager />;
       case 'admin-depts': return <AdminDepts />;
       case 'admin-companies': return <AdminCompanyManager />;
+      case 'admin-config': return <AdminAppConfig />; // <--- WIRED UP
       
-      // HR Views
+      // HR
       case 'hr-comments': return <HRPlaceholder />;
       
       default: return <DashboardStats />;
