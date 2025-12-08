@@ -18,8 +18,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate }) => 
 
   if (!currentUser) return <>{children}</>;
 
-  // Use Company Colors or Default Fallback
-  const primaryColor = currentCompany?.primaryColor || '#2563eb'; // Default Blue
+  const primaryColor = currentCompany?.primaryColor || '#2563eb'; 
   const companyName = currentCompany?.name || appConfig?.companyName || 'LunchLink';
 
   const handleNavigate = (view: string) => {
@@ -27,7 +26,6 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate }) => 
     setIsMobileMenuOpen(false); 
   };
 
-  // Header Title Logic
   const getHeaderTitle = () => {
       if (activeView === 'admin-menus') {
           const name = currentUser.fullName.split(' ')[0]; 
@@ -35,6 +33,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate }) => 
       }
       if (activeView === 'order') return 'Lunch Menu';
       if (activeView === 'admin-companies') return 'Company Management';
+      if (activeView === 'admin-config') return 'Global Settings';
       return activeView.replace('-', ' ');
   };
 
@@ -55,26 +54,19 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate }) => 
   };
 
   return (
-    <div className="flex h-screen bg-slate-900 overflow-hidden text-slate-200"> 
-      
-      {/* MOBILE HEADER */}
+    <div className="flex h-screen bg-slate-950 overflow-hidden text-slate-200"> 
       <div className="md:hidden fixed top-0 left-0 right-0 h-20 bg-slate-900 shadow-md z-30 flex items-center justify-between px-6 border-b border-slate-800">
           <div className="flex items-center space-x-3">
              <div className="p-2 rounded-lg" style={{ backgroundColor: primaryColor }}><Utensils className="w-6 h-6 text-white" /></div>
              <span className="font-bold text-white text-lg truncate">{companyName}</span>
           </div>
-          <button 
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
-            className="p-2 text-slate-300 hover:bg-slate-800 rounded-lg transition-colors"
-          >
+          <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-slate-300 hover:bg-slate-800 rounded-lg transition-colors">
               {isMobileMenuOpen ? <X className="w-8 h-8" /> : <Menu className="w-8 h-8" />}
           </button>
       </div>
 
-      {/* MOBILE OVERLAY */}
       {isMobileMenuOpen && ( <div className="fixed inset-0 bg-black/80 z-30 md:hidden" onClick={() => setIsMobileMenuOpen(false)} /> )}
 
-      {/* SIDEBAR */}
       <aside className={`
           fixed md:relative z-40 h-full w-64 bg-slate-950 shadow-2xl flex flex-col transition-transform duration-300 ease-in-out border-r border-slate-800
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} 
@@ -112,20 +104,17 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate }) => 
             </>
           )}
 
-          {/* SUPER ADMIN ONLY */}
           {currentUser.role === UserRole.SUPER_ADMIN && (
             <>
               <div className="mt-6 px-4 mb-2 text-xs font-bold text-slate-500 uppercase tracking-wider">Super Admin</div>
-              <NavItem view="admin-companies" icon={Building} label="Companies" /> {/* <--- NEW LINK */}
+              <NavItem view="admin-companies" icon={Building} label="Companies" />
               <NavItem view="admin-users" icon={Users} label="Manage Users" />
               <NavItem view="admin-depts" icon={Settings} label="Departments" />
               <NavItem view="admin-config" icon={FileText} label="App Config" />
             </>
           )}
 
-          {currentUser.role === UserRole.HR && (
-             <NavItem view="hr-comments" icon={MessageSquare} label="Employee Comments" />
-          )}
+          {currentUser.role === UserRole.HR && ( <NavItem view="hr-comments" icon={MessageSquare} label="Employee Comments" /> )}
         </div>
 
         <div className="p-4 border-t border-slate-800 bg-slate-900">
@@ -147,9 +136,14 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate }) => 
             <h1 className="text-2xl font-bold text-white capitalize">
                 {getHeaderTitle()}
             </h1>
-            <span className="text-sm text-slate-400 font-medium" style={{ color: primaryColor }}>
-                {currentCompany?.welcomeMessage}
-            </span>
+            {/* FIXED LINK: Now clickable and opens Employee Menu */}
+            <button 
+                onClick={() => onNavigate('order')}
+                className="text-sm font-medium hover:underline transition-all" 
+                style={{ color: primaryColor }}
+            >
+                {currentCompany?.welcomeMessage || 'Employee Portal'} &rarr;
+            </button>
         </header>
         <div className="p-4 md:p-8">
           {children}
