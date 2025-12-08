@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '../store/SupabaseStore';
+// SAFE IMPORTS: Ensures all types are available
 import { Order, MenuCategory, MenuIssue, Message, Comment } from '../types';
 import { Calendar, Utensils, FileText, ChevronRight, ChevronLeft, AlertCircle, MessageCircle, X, Clock, CheckCircle, XCircle, Send, MessageSquare, Info, TrendingUp } from 'lucide-react';
 import { MenuGrid } from '../components/MenuGrid';
@@ -15,10 +16,35 @@ const formatDateDisplay = (dateStr: string) => {
 
 // 1. ORDER LUNCH VIEW
 export const OrderLunchView: React.FC = () => {
-  const { menus, placeOrder, currentUser, currentCompany, reportIssue, menuIssues, appConfig, orders } = useStore();
-  const getTodayStr = () => new Date().toLocaleDateString('en-CA');
+  const { menus, placeOrder, currentUser, reportIssue, menuIssues, appConfig, orders } = useStore();
   
-  const [selectedDate, setSelectedDate] = useState(getTodayStr());
+  // --- SMART DATE LOGIC ---
+  // Calculates whether to show Today or Tomorrow based on Cutoff Time
+  const getInitialDateState = () => {
+      const today = new Date();
+      const todayStr = toLocalISOString(today);
+      
+      // Parse Cutoff Time (Default 10:30)
+      const [cutoffHour, cutoffMinute] = (appConfig?.orderCutoffTime || '10:30').split(':').map(Number);
+      const cutoff = new Date();
+      cutoff.setHours(cutoffHour, cutoffMinute, 0);
+
+      // If it is ALREADY past cutoff, default to TOMORROW
+      if (today > cutoff) {
+          const tomorrow = new Date(today);
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          return { date: toLocalISOString(tomorrow), autoSwitched: true };
+      }
+
+      // Otherwise show TODAY
+      return { date: todayStr, autoSwitched: false };
+  };
+
+  // Initialize State using the Smart Logic
+  const initialState = getInitialDateState();
+  const [selectedDate, setSelectedDate] = useState(initialState.date);
+  const [showAutoSwitchMsg, setShowAutoSwitchMsg] = useState(initialState.autoSwitched);
+
   const [weekOffset, setWeekOffset] = useState(0); 
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [specialInstructions, setSpecialInstructions] = useState('');
@@ -29,10 +55,7 @@ export const OrderLunchView: React.FC = () => {
   const menuForDay = menus.find(m => m.date === selectedDate) || { id: 'temp-empty', date: selectedDate, items: [], notes: '' };
   const myIssues = menuIssues.filter(i => i.date === selectedDate && i.userId === currentUser?.id);
 
-  // Dynamic Branding
-  const brandColor = currentCompany?.primaryColor || '#eab308'; // Default fallback
-  const brandName = currentCompany?.name || appConfig?.companyName || 'LunchLink';
-
+  // --- STATS LOGIC ---
   const getWeekRange = () => {
     const today = new Date();
     const dayOfWeek = today.getDay(); 
@@ -51,7 +74,10 @@ export const OrderLunchView: React.FC = () => {
   }).length;
 
   const isPastCutoff = () => {
-      if (selectedDate !== getTodayStr()) return false;
+      // Only enforce cutoff if looking at TODAY
+      const todayStr = toLocalISOString(new Date());
+      if (selectedDate !== todayStr) return false;
+
       const now = new Date();
       const [cutoffHour, cutoffMinute] = (appConfig?.orderCutoffTime || '10:30').split(':').map(Number);
       const cutoff = new Date();
@@ -93,27 +119,38 @@ export const OrderLunchView: React.FC = () => {
     else setSelectedItems([...selectedItems, id]);
   };
 
+  // Calculate stats for the sidebar
   const selectedItemsData = menuForDay.items.filter(i => selectedItems.includes(i.id));
   const totalCalories = selectedItemsData.reduce((sum, item) => sum + item.calories, 0);
 
+  // Dynamic Branding
+  const brandColor = useStore().currentCompany?.primaryColor || '#eab308';
+  const brandName = useStore().currentCompany?.name || appConfig?.companyName || 'LunchLink';
+
   return (
     <div className="space-y-6 pb-32 relative">
-      {/* DYNAMIC BANNER: Uses Company Color for border and slight tint */}
-      <div 
-        className="border-2 p-6 text-center rounded-xl shadow-lg transition-colors"
-        style={{ 
-            borderColor: brandColor,
-            backgroundColor: `${brandColor}15` // 15% opacity version of the color
-        }}
-      >
-          <h1 className="text-xl md:text-2xl font-extrabold uppercase tracking-tight mb-2" style={{ color: brandColor }}>
-              {brandName} - Lunch Menu
-          </h1>
-          <p className="font-bold text-slate-300 whitespace-pre-wrap">
-              {menuForDay.notes || "Menu details for this day have not been published yet."}
-          </p>
+      
+      {/* AUTO-SWITCH NOTIFICATION BANNER */}
+      {showAutoSwitchMsg && (
+          <div className="bg-blue-900/50 border-l-4 border-blue-500 p-4 rounded-r-lg flex justify-between items-center shadow-lg animate-in slide-in-from-top-2 duration-500">
+              <div className="flex items-center text-blue-100">
+                  <Info className="w-5 h-5 mr-3 text-blue-400" />
+                  <div>
+                      <p className="font-bold text-sm">You've been moved to Tomorrow's Menu</p>
+                      <p className="text-xs text-blue-300">It's past the {appConfig?.orderCutoffTime} cutoff for today's lunch orders.</p>
+                  </div>
+              </div>
+              <button onClick={() => setShowAutoSwitchMsg(false)} className="text-blue-400 hover:text-white"><X className="w-5 h-5" /></button>
+          </div>
+      )}
+
+      {/* HEADER BANNER */}
+      <div className="border-2 p-6 text-center rounded-xl shadow-lg transition-colors" style={{ borderColor: brandColor, backgroundColor: `${brandColor}15` }}>
+          <h1 className="text-xl md:text-2xl font-extrabold uppercase tracking-tight mb-2" style={{ color: brandColor }}>{brandName} - Lunch Menu</h1>
+          <p className="font-bold text-slate-300 whitespace-pre-wrap">{menuForDay.notes || "Menu details for this day have not been published yet."}</p>
       </div>
 
+      {/* DATE SELECTOR (Darker) */}
       <div className="bg-slate-900 p-6 rounded-xl shadow-lg border border-slate-800 mt-8">
         <div className="flex justify-between items-center mb-4">
             <div className="flex flex-col">
@@ -129,12 +166,13 @@ export const OrderLunchView: React.FC = () => {
             <div className="flex items-center space-x-2 bg-slate-800 rounded-full p-1"><button onClick={() => setWeekOffset(weekOffset - 1)} className="p-1 hover:bg-slate-700 rounded-full text-white"><ChevronLeft className="w-4 h-4" /></button><button onClick={() => setWeekOffset(weekOffset + 1)} className="p-1 hover:bg-slate-700 rounded-full text-white"><ChevronRight className="w-4 h-4" /></button></div>
         </div>
         <div className="flex gap-4 overflow-x-auto pb-6 pt-2">
-            {weekDates.map((dateObj) => { const dateStr = toLocalISOString(dateObj); const isSelected = dateStr === selectedDate; const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' }); const dayNum = dateObj.getDate(); const hasMenu = menus.some(m => m.date === dateStr); return (<button key={dateStr} onClick={() => setSelectedDate(dateStr)} className={`flex flex-col items-center justify-center flex-shrink-0 w-36 h-28 p-2 rounded-xl border-2 transition-all relative gap-1 ${isSelected ? 'border-blue-600 bg-blue-600 text-white font-extrabold transform scale-105 shadow-xl z-10' : 'border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-400'}`}><span className="text-xs font-bold uppercase tracking-wide">{dayName}</span><span className="text-3xl font-bold">{dayNum}</span>{hasMenu && <div className={`w-2 h-2 rounded-full ${isSelected ? 'bg-white' : 'bg-green-500'}`}></div>}</button>); })}
+            {weekDates.map((dateObj) => { const dateStr = toLocalISOString(dateObj); const isSelected = dateStr === selectedDate; const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' }); const dayNum = dateObj.getDate(); const hasMenu = menus.some(m => m.date === dateStr); return (<button key={dateStr} onClick={() => { setSelectedDate(dateStr); setShowAutoSwitchMsg(false); }} className={`flex flex-col items-center justify-center flex-shrink-0 w-36 h-28 p-2 rounded-xl border-2 transition-all relative gap-1 ${isSelected ? 'border-blue-600 bg-blue-600 text-white font-extrabold transform scale-105 shadow-xl z-10' : 'border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-400'}`}><span className="text-xs font-bold uppercase tracking-wide">{dayName}</span><span className="text-3xl font-bold">{dayNum}</span>{hasMenu && <div className={`w-2 h-2 rounded-full ${isSelected ? 'bg-white' : 'bg-green-500'}`}></div>}</button>); })}
         </div>
       </div>
 
       <div className="flex items-center justify-between"><h3 className="text-lg font-semibold text-slate-300">Menu for {formatDateDisplay(selectedDate)}</h3></div>
 
+      {/* --- NEW SPLIT LAYOUT (Dark) --- */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-3"><MenuGrid items={menuForDay.items} selectedItemIds={selectedItems} onItemClick={toggleItem} /></div>
           <div className="lg:col-span-1 flex flex-col gap-6">
@@ -151,7 +189,7 @@ export const OrderLunchView: React.FC = () => {
 
       {!isIssueDrawerOpen && (<button onClick={() => setIsIssueDrawerOpen(true)} className="fixed right-0 top-[40%] z-50 bg-slate-800 text-white font-bold py-4 px-3 rounded-l-xl shadow-xl flex flex-col items-center gap-2 transition-transform hover:-translate-x-1 border-l-2 border-y-2 border-slate-700"><AlertCircle className="w-6 h-6 text-red-400" /><span className="text-xs uppercase writing-vertical-rl" style={{ writingMode: 'vertical-rl' }}>Report Issue</span></button>)}
 
-      {selectedItems.length > 0 && (<div className="fixed bottom-0 left-0 right-0 p-4 bg-slate-900 border-t border-slate-800 shadow-2xl z-40 flex justify-center items-center md:px-8">{isPastCutoff() ? (<div className="bg-slate-700 text-slate-400 px-10 py-4 rounded-full font-bold flex items-center space-x-3 cursor-not-allowed"><Clock className="w-6 h-6" /><span>Ordering Closed (Cutoff {appConfig?.orderCutoffTime})</span></div>) : (<button onClick={handleOrder} className="bg-blue-600 text-white px-10 py-4 rounded-full shadow-lg font-bold flex items-center space-x-3 animate-bounce hover:animate-none border-4 border-slate-900 text-lg"><Utensils className="w-6 h-6" /><span>Place Order ({selectedItems.length} items)</span></button>)}</div>)}
+      {selectedItems.length > 0 && (<div className="fixed bottom-0 left-0 right-0 p-4 bg-slate-900 border-t border-slate-800 shadow-2xl z-40 flex justify-center items-center md:px-8">{isPastCutoff() ? (<div className="bg-gray-700 text-slate-300 px-10 py-4 rounded-full font-bold flex items-center space-x-3 cursor-not-allowed border border-slate-600"><Clock className="w-6 h-6" /><span>Ordering Closed (Cutoff {appConfig?.orderCutoffTime})</span></div>) : (<button onClick={handleOrder} className="bg-blue-600 text-white px-10 py-4 rounded-full shadow-lg font-bold flex items-center space-x-3 animate-bounce hover:animate-none border-4 border-slate-900 text-lg"><Utensils className="w-6 h-6" /><span>Place Order ({selectedItems.length} items)</span></button>)}</div>)}
 
       <div className={`fixed inset-y-0 right-0 w-96 bg-slate-900 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-l border-slate-800 ${isIssueDrawerOpen ? 'translate-x-0' : 'translate-x-full'}`}><div className="h-full flex flex-col"><div className="p-6 bg-slate-950 border-b border-slate-800 flex justify-between items-center"><h2 className="text-xl font-bold text-white flex items-center"><AlertCircle className="w-6 h-6 mr-2 text-red-400" />Report Issue</h2><button onClick={() => setIsIssueDrawerOpen(false)} className="p-2 hover:bg-slate-800 rounded-full text-slate-400 transition-colors"><X className="w-6 h-6" /></button></div><div className="flex-1 overflow-y-auto p-6 space-y-6"><p className="text-slate-400 text-sm">Did you receive the wrong order? Please let the kitchen know.</p>{myIssues.length > 0 && (<div className="space-y-4"><h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Your Reports Today</h3>{myIssues.map(issue => (<div key={issue.id} className="bg-slate-800 p-4 rounded-lg border border-slate-700 text-sm"><p className="font-bold text-white mb-1">"{issue.issue}"</p><div className="flex justify-between items-center mt-2"><span className="text-xs text-slate-500">{new Date(issue.timestamp).toLocaleTimeString()}</span>{issue.chefResponse ? <span className="px-2 py-1 bg-green-900/30 text-green-400 text-xs rounded-full font-bold">Resolved</span> : <span className="px-2 py-1 bg-yellow-900/30 text-yellow-400 text-xs rounded-full">Pending</span>}</div>{issue.chefResponse && <div className="mt-3 p-3 bg-green-900/20 text-green-300 rounded border border-green-900/30 flex items-start"><MessageCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" /><span><strong>Chef:</strong> {issue.chefResponse}</span></div>}</div>))}</div>)}<div><label className="block text-sm font-bold text-slate-300 mb-2">Describe the issue</label><textarea value={issueText} onChange={e => setIssueText(e.target.value)} className="w-full h-32 p-3 border border-slate-700 rounded-lg focus:ring-2 focus:ring-red-500 outline-none resize-none text-gray-900 bg-white" placeholder="Type your message here..." /></div></div><div className="p-6 border-t border-gray-100 bg-gray-50"><button onClick={handleReportIssue} disabled={!issueText.trim()} className={`w-full py-3 px-4 rounded-lg font-bold text-white shadow-lg transition-all ${issueText.trim() ? 'bg-slate-900 hover:bg-black transform hover:scale-[1.02]' : 'bg-gray-400 cursor-not-allowed'}`}>Submit Report</button></div></div></div>{isIssueDrawerOpen && <div className="fixed inset-0 bg-black bg-opacity-25 z-40" onClick={() => setIsIssueDrawerOpen(false)}></div>}
     </div>
@@ -162,7 +200,9 @@ export const OrderHistoryView: React.FC = () => {
   const { orders, currentUser, menus } = useStore();
   const myOrders = orders.filter(o => o.userId === currentUser?.id).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   const getItemNames = (menuId: string, itemIds: string[]) => { const menu = menus.find(m => m.id === menuId); if (!menu) return `${itemIds.length} items`; const names = menu.items.filter(i => itemIds.includes(i.id)).map(i => i.name).join(', '); return names || `${itemIds.length} items`; };
-  return (<div className="space-y-6"><div className="bg-slate-800 p-6 rounded-xl shadow-sm border-b border-slate-700"><h2 className="text-2xl font-bold text-white">My Order History</h2></div>{myOrders.length === 0 ? <div className="text-center py-20 bg-slate-800 rounded-xl shadow-sm border border-slate-700"><Clock className="w-12 h-12 text-slate-600 mx-auto mb-3" /><p className="text-slate-400">You haven't placed any orders yet.</p></div> : <div className="bg-slate-800 rounded-xl shadow-sm overflow-hidden border border-slate-700"><table className="w-full text-left"><thead className="bg-slate-900 border-b border-slate-700"><tr><th className="p-4 text-slate-400">Date</th><th className="p-4 text-slate-400">Items</th><th className="p-4 text-slate-400">Status</th></tr></thead><tbody className="divide-y divide-slate-700">{myOrders.map(order => (<tr key={order.id} className="hover:bg-slate-700/50"><td className="p-4"><div className="font-bold text-white">{new Date(order.date).toLocaleDateString()}</div></td><td className="p-4"><p className="text-sm text-slate-300">{getItemNames(order.menuId, order.selectedItemIds)}</p></td><td className="p-4"><span className={`px-3 py-1 rounded-full text-xs font-bold ${order.status === 'Confirmed' ? 'bg-green-900/30 text-green-400' : 'bg-yellow-900/30 text-yellow-400'}`}>{order.status}</span></td></tr>))}</tbody></table></div>}</div>);
+  return (<div className="space-y-6"><div className="bg-slate-800 p-6 rounded-xl shadow-sm border-b border-slate-700"><h2 className="text-2xl font-bold text-white">My Order History</h2></div>{myOrders.length === 0 ? <div className="text-center py-20 bg-slate-800 rounded-xl shadow-sm border border-slate-700"><Clock className="w-12 h-12 text-slate-600 mx-auto mb-3" /><p className="text-slate-400">You haven't placed any orders yet.</p></div> : <div className="bg-slate-800 rounded-xl shadow-sm overflow-hidden border border-slate-700"><table className="w-full text-left"><thead className="bg-slate-900 border-b border-slate-700"><tr><th className="p-4 text-slate-400">Date</th><th className="p-4 text-slate-400">Items</th><th className="p-4 text-slate-400">Status</th></tr></thead><tbody className="divide-y divide-slate-100">{myOrders.map(order => (<tr key={order.id} className="hover:bg-slate-50"><td className="p-4"><div className="font-medium text-gray-800">{new Date(order.date).toLocaleDateString()}</div></td><td className="p-4"><p className="text-sm text-gray-600">{getItemNames(order.menuId, order.selectedItemIds)}</p></td><td className="p-4"><span className={`px-3 py-1 rounded-full text-xs font-medium ${order.status === 'Confirmed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{order.status}</span></td></tr>))}</tbody></table></div>}
+    </div>
+  );
 };
 
 export const MessagesView: React.FC = () => {
@@ -171,12 +211,12 @@ export const MessagesView: React.FC = () => {
     if (!currentUser) return null;
     const myMessages = messages.filter(m => m.fromUserId === currentUser.id || m.toUserId === currentUser.id || (currentUser.role === 'KITCHEN_ADMIN' && m.toUserId === 'kitchen'));
     const handleSend = () => { if (!newItem.trim()) return; sendMessage({ id: Date.now().toString(), fromUserId: currentUser.id, fromUserName: currentUser.fullName, toUserId: 'kitchen', content: newItem, timestamp: Date.now(), read: false }); setNewItem(''); };
-    return (<div className="max-w-3xl mx-auto h-[600px] flex flex-col bg-slate-800 rounded-xl shadow-lg border border-slate-700"><div className="p-4 border-b border-slate-700 font-bold text-white">Messages to Kitchen</div><div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-900/50">{myMessages.map(msg => (<div key={msg.id} className={`flex ${msg.fromUserId === currentUser.id ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[80%] p-3 rounded-lg shadow-sm ${msg.fromUserId === currentUser.id ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-200'}`}>{msg.fromUserId !== currentUser.id && <p className="text-[10px] font-bold text-slate-400 mb-1">{msg.fromUserName}</p>}<p className="text-sm">{msg.content}</p></div></div>))}</div><div className="p-4 border-t border-slate-700 flex gap-2 bg-slate-800"><input className="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-sm text-white outline-none" placeholder="Type a message..." value={newItem} onChange={(e) => setNewItem(e.target.value)} /><button onClick={handleSend} className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700"><Send className="w-5 h-5" /></button></div></div>);
+    return (<div className="max-w-3xl mx-auto h-[600px] flex flex-col bg-slate-800 rounded-xl shadow-sm border border-slate-200"><div className="p-4 border-b border-slate-100 font-bold text-gray-700">Messages to Kitchen</div><div className="flex-1 overflow-y-auto p-4 space-y-4">{myMessages.map(msg => (<div key={msg.id} className={`flex ${msg.fromUserId === currentUser.id ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[80%] p-3 rounded-lg ${msg.fromUserId === currentUser.id ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800'}`}><p className="text-sm">{msg.content}</p></div></div>))}</div><div className="p-4 border-t border-slate-100 flex gap-2"><input className="flex-1 border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Type a message..." value={newItem} onChange={(e) => setNewItem(e.target.value)} /><button onClick={handleSend} className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700"><Send className="w-5 h-5" /></button></div></div>);
 };
 
 export const FeedbackView: React.FC = () => {
     const { comments, currentUser, addComment } = useStore();
     const [feedback, setFeedback] = useState('');
     const handleSubmit = () => { if (!feedback.trim() || !currentUser) return; addComment({ id: Date.now().toString(), userId: currentUser.id, userName: currentUser.fullName, content: feedback, timestamp: Date.now(), responses: [] }); setFeedback(''); alert("Feedback sent to HR."); };
-    return (<div className="max-w-2xl mx-auto space-y-6"><div className="bg-slate-800 p-8 rounded-xl shadow-lg border border-slate-700"><h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-white"><MessageSquare className="w-5 h-5 text-purple-500"/> Submit Feedback</h2><textarea className="w-full bg-slate-900 border border-slate-600 p-4 rounded-xl h-40 focus:ring-2 focus:ring-purple-500 outline-none text-white placeholder-slate-500" placeholder="Describe your issue..." value={feedback} onChange={(e) => setFeedback(e.target.value)} /><button onClick={handleSubmit} className="mt-6 w-full bg-purple-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-purple-700 shadow-lg">Submit Feedback</button></div></div>);
+    return (<div className="max-w-2xl mx-auto space-y-6"><div className="bg-slate-800 p-6 rounded-xl shadow-sm"><h2 className="text-xl font-bold mb-4 flex items-center gap-2"><MessageSquare className="w-5 h-5 text-purple-600"/> Submit Feedback</h2><textarea className="w-full border p-3 rounded-lg h-32 focus:ring-2 focus:ring-purple-500 outline-none" placeholder="Describe your issue..." value={feedback} onChange={(e) => setFeedback(e.target.value)} /><button onClick={handleSubmit} className="mt-4 bg-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-purple-700">Submit Feedback</button></div></div>);
 };
