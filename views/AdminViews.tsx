@@ -259,4 +259,127 @@ export const KitchenMasterDatabase: React.FC = () => {
   };
 
   const handleEditClick = (item: MasterFoodItem) => {
-      setEditingId(item.
+      setEditingId(item.id); setName(item.name); setCategory(item.category as MenuCategory);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const filteredItems = masterFoodItems.filter(i => i.name.toLowerCase().includes(search.toLowerCase()) || i.category.toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <div className="space-y-8 pb-20">
+        <div className={`p-8 rounded-2xl shadow-lg border transition-colors ${editingId ? 'bg-blue-900/20 border-blue-600' : 'bg-slate-800 border-slate-700'}`}>
+            <h2 className={`text-2xl font-bold mb-6 flex items-center ${editingId ? 'text-blue-400' : 'text-white'}`}>
+                {editingId ? <Edit2 className="w-6 h-6 mr-2" /> : <Utensils className="w-6 h-6 mr-2 text-blue-500" />} {editingId ? 'Edit Master Item' : 'Add New Master Item'}
+            </h2>
+            <div className="flex flex-col md:flex-row gap-4 items-end">
+                <div className="flex-1 w-full"><label className="block text-xs font-bold text-slate-400 uppercase mb-1">Item Name</label><input type="text" placeholder="e.g. Curried Shrimp" className="w-full p-3 border border-slate-600 rounded-lg bg-slate-900 text-white outline-none focus:ring-2 focus:ring-blue-500" value={name} onChange={e => setName(e.target.value)} /></div>
+                <div className="w-full md:w-64"><label className="block text-xs font-bold text-slate-400 uppercase mb-1">Category</label><select className="w-full p-3 border border-slate-600 rounded-lg bg-slate-900 text-white" value={category} onChange={e => setCategory(e.target.value as MenuCategory)}><option value="Protein">Protein</option><option value="Carbohydrate">Carbohydrate</option><option value="Sides">Sides</option><option value="Fibre">Fibre / Vegetable</option><option value="Soup">Soup</option><option value="Vegetarian">Vegetarian</option><option value="Sandwiches">Sandwiches</option><option value="Special">Special</option><option value="Condiments">Condiments</option></select></div>
+                <button onClick={handleSubmit} disabled={!name} className={`px-8 py-3 rounded-lg font-bold text-white shadow-md transition-all ${name ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}>{editingId ? 'Update Item' : 'Add Item'}</button>
+                {editingId && (<button onClick={() => { setEditingId(null); setName(''); }} className="px-4 py-3 rounded-lg font-bold text-slate-400 hover:bg-slate-700"><X className="w-5 h-5" /></button>)}
+            </div>
+        </div>
+        <div className="bg-slate-800 rounded-xl shadow-lg overflow-hidden border border-slate-700"><div className="p-4 border-b border-slate-700 flex items-center bg-slate-900"><Search className="w-5 h-5 text-slate-400 mr-2" /><input type="text" placeholder="Search database..." className="bg-transparent outline-none flex-1 font-medium text-white placeholder-slate-500" value={search} onChange={e => setSearch(e.target.value)} /></div><div className="max-h-[500px] overflow-y-auto"><table className="w-full text-left"><thead className="bg-slate-900 sticky top-0 shadow-sm"><tr><th className="p-4 text-xs font-bold text-slate-500 uppercase">Item Name</th><th className="p-4 text-xs font-bold text-slate-500 uppercase">Category</th><th className="p-4 text-right text-xs font-bold text-slate-500 uppercase">Action</th></tr></thead><tbody className="divide-y divide-slate-700">{filteredItems.map(item => (<tr key={item.id} className={`transition-colors group ${editingId === item.id ? 'bg-blue-900/20' : 'hover:bg-slate-700/50'}`}><td className="p-4 font-bold text-white">{item.name}</td><td className="p-4 text-sm"><span className="px-2 py-1 bg-slate-700 border border-slate-600 rounded text-xs font-medium text-slate-300">{item.category}</span></td><td className="p-4 text-right flex justify-end gap-2"><button onClick={() => handleEditClick(item)} className="text-blue-400 hover:text-blue-300 p-2 hover:bg-blue-900/30 rounded-full transition-all" title="Edit"><Edit2 className="w-4 h-4" /></button><button onClick={() => deleteMasterItem(item.id)} className="text-slate-500 hover:text-red-400 p-2 hover:bg-red-900/20 rounded-full transition-all" title="Delete"><Trash2 className="w-4 h-4" /></button></td></tr>))}</tbody></table></div></div>
+    </div>
+  );
+};
+
+// =========================================================
+// 4. ADMIN COMPANY MANAGER
+// =========================================================
+export const AdminCompanyManager: React.FC = () => {
+    const { companies, addCompany, updateCompany, deleteCompany } = useStore();
+    const [name, setName] = useState('');
+    const [logoUrl, setLogoUrl] = useState('');
+    const [primaryColor, setPrimaryColor] = useState('#2563eb');
+    const [secondaryColor, setSecondaryColor] = useState('#1e40af');
+    const [tagline, setTagline] = useState('');
+    const [editingId, setEditingId] = useState<string | null>(null);
+
+    const handleSubmit = () => {
+        if (!name.trim()) return;
+        const companyData: Company = {
+            id: editingId || 'comp_' + Date.now(),
+            name,
+            logoUrl,
+            primaryColor,
+            secondaryColor,
+            welcomeMessage: name, 
+            tagline
+        };
+        if (editingId) { updateCompany(companyData); alert("Company updated."); setEditingId(null); } 
+        else { addCompany(companyData); alert("Company added."); }
+        setName(''); setLogoUrl(''); setTagline(''); setPrimaryColor('#2563eb'); setSecondaryColor('#1e40af');
+    };
+
+    const handleEdit = (c: Company) => {
+        setEditingId(c.id); setName(c.name); setLogoUrl(c.logoUrl); setPrimaryColor(c.primaryColor); setSecondaryColor(c.secondaryColor); setTagline(c.tagline || '');
+    };
+
+    return (
+        <div className="space-y-8 pb-20">
+            <div className="bg-slate-800 p-8 rounded-2xl shadow-lg border border-slate-700">
+                <h2 className="text-2xl font-bold text-white mb-6 flex items-center"><Building className="w-6 h-6 mr-2 text-blue-500" />{editingId ? 'Edit Company' : 'Add New Company'}</h2>
+                <div className="grid md:grid-cols-2 gap-6">
+                    <div><label className="block text-xs font-bold text-slate-400 uppercase mb-1">Company Name</label><input type="text" className="w-full p-3 bg-slate-900 border border-slate-600 rounded-lg text-white outline-none focus:ring-2 focus:ring-blue-500" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Seprod" /></div>
+                    <div><label className="block text-xs font-bold text-slate-400 uppercase mb-1">Tagline</label><input type="text" className="w-full p-3 bg-slate-900 border border-slate-600 rounded-lg text-white outline-none focus:ring-2 focus:ring-blue-500" value={tagline} onChange={e => setTagline(e.target.value)} placeholder="e.g. Made in Jamaica" /></div>
+                    <div><label className="block text-xs font-bold text-slate-400 uppercase mb-1">Logo URL</label><input type="text" className="w-full p-3 bg-slate-900 border border-slate-600 rounded-lg text-white outline-none focus:ring-2 focus:ring-blue-500" value={logoUrl} onChange={e => setLogoUrl(e.target.value)} placeholder="https://..." /></div>
+                    <div className="flex gap-4">
+                        <div><label className="block text-xs font-bold text-slate-400 uppercase mb-1">Primary Color</label><input type="color" className="w-full h-12 bg-transparent cursor-pointer" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} /></div>
+                        <div><label className="block text-xs font-bold text-slate-400 uppercase mb-1">Secondary Color</label><input type="color" className="w-full h-12 bg-transparent cursor-pointer" value={secondaryColor} onChange={e => setSecondaryColor(e.target.value)} /></div>
+                    </div>
+                </div>
+                <div className="mt-6 flex gap-2"><button onClick={handleSubmit} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-lg">{editingId ? 'Update Company' : 'Add Company'}</button>{editingId && <button onClick={() => setEditingId(null)} className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg">Cancel</button>}</div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {companies.map(c => (
+                    <div key={c.id} className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-md hover:shadow-lg transition-all">
+                        <div className="flex justify-between items-start">
+                            <div className="flex items-center gap-3">{c.logoUrl ? <img src={c.logoUrl} alt={c.name} className="w-12 h-12 rounded object-contain bg-white p-1" /> : <div className="w-12 h-12 bg-slate-700 rounded flex items-center justify-center"><Building className="text-slate-500" /></div>}<div><h3 className="font-bold text-white text-lg">{c.name}</h3><p className="text-xs text-slate-400">{c.tagline}</p></div></div>
+                            <div className="flex gap-2"><button onClick={() => handleEdit(c)} className="p-2 text-blue-400 hover:bg-blue-900/30 rounded transition-colors"><Edit2 className="w-4 h-4" /></button><button onClick={() => deleteCompany(c.id)} className="p-2 text-red-400 hover:bg-red-900/30 rounded transition-colors"><Trash2 className="w-4 h-4" /></button></div>
+                        </div>
+                        <div className="mt-4 flex gap-2"><div className="h-2 flex-1 rounded" style={{ backgroundColor: c.primaryColor }}></div><div className="h-2 flex-1 rounded" style={{ backgroundColor: c.secondaryColor }}></div></div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+// =========================================================
+// 5. GLOBAL APP CONFIG
+// =========================================================
+export const AdminAppConfig: React.FC = () => {
+    const { appConfig, updateAppConfig } = useStore();
+    const [name, setName] = useState(appConfig.companyName);
+    const [cutoff, setCutoff] = useState(appConfig.orderCutoffTime);
+    const [tagline, setTagline] = useState(appConfig.tagline);
+
+    useEffect(() => {
+        setName(appConfig.companyName);
+        setCutoff(appConfig.orderCutoffTime);
+        setTagline(appConfig.tagline);
+    }, [appConfig]);
+
+    const handleSave = () => {
+        updateAppConfig({ ...appConfig, companyName: name, orderCutoffTime: cutoff, tagline });
+        alert("Global Config Updated");
+    };
+
+    return (
+        <div className="space-y-8 pb-20">
+            <div className="bg-slate-800 p-8 rounded-2xl shadow-lg border border-slate-700">
+                <h2 className="text-2xl font-bold text-white mb-6 flex items-center"><Settings className="w-6 h-6 mr-2 text-blue-500" /> Global Application Settings</h2>
+                <div className="space-y-4 max-w-xl">
+                    <div><label className="block text-xs font-bold text-slate-400 uppercase mb-1">Platform Name</label><input type="text" className="w-full p-3 bg-slate-900 border border-slate-600 rounded-lg text-white outline-none focus:ring-2 focus:ring-blue-500" value={name} onChange={e => setName(e.target.value)} /></div>
+                    <div><label className="block text-xs font-bold text-slate-400 uppercase mb-1">Global Order Cut-Off Time (24h)</label><input type="time" className="w-full p-3 bg-slate-900 border border-slate-600 rounded-lg text-white outline-none focus:ring-2 focus:ring-blue-500" value={cutoff} onChange={e => setCutoff(e.target.value)} /></div>
+                    <div><label className="block text-xs font-bold text-slate-400 uppercase mb-1">Platform Tagline</label><input type="text" className="w-full p-3 bg-slate-900 border border-slate-600 rounded-lg text-white outline-none focus:ring-2 focus:ring-blue-500" value={tagline} onChange={e => setTagline(e.target.value)} /></div>
+                    <div className="pt-4"><button onClick={handleSave} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-lg flex items-center"><Save className="w-4 h-4 mr-2" /> Save Configuration</button></div>
+                </div>
+            </div>
+             <div className="bg-slate-800 p-8 rounded-2xl shadow-lg border border-slate-700"><h2 className="text-xl font-bold text-white mb-4 flex items-center"><Monitor className="w-5 h-5 mr-2 text-green-500" /> System Status</h2><div className="grid grid-cols-2 gap-4"><div className="p-4 bg-slate-900 rounded-lg"><p className="text-xs text-slate-400 uppercase">Version</p><p className="text-white font-mono">v2.1.0 (Enterprise)</p></div><div className="p-4 bg-slate-900 rounded-lg"><p className="text-xs text-slate-400 uppercase">Database</p><p className="text-green-400 font-mono">Connected (Supabase)</p></div></div></div>
+        </div>
+    );
+};
+
+export const AdminUserManager: React.FC = () => <div className="p-8 text-white">User Manager Placeholder</div>;
+export const AdminDepts: React.FC = () => <div className="p-8 text-white">Dept Manager Placeholder</div>;
