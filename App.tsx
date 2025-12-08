@@ -3,7 +3,6 @@ import { StoreProvider, useStore } from './store/SupabaseStore';
 import Login from './views/Login';
 import Layout from './components/Layout';
 import { OrderLunchView, OrderHistoryView, MessagesView, FeedbackView } from './views/EmployeeViews'; 
-// IMPORT NEW CONFIG COMPONENT
 import { AdminKitchenDashboard, AdminMenuManager, KitchenMasterDatabase, AdminUserManager, AdminDepts, AdminCompanyManager, AdminAppConfig } from './views/AdminViews';
 import { UserRole } from './types';
 
@@ -48,7 +47,9 @@ const MainContent: React.FC = () => {
       case 'admin-users': return <AdminUserManager />;
       case 'admin-depts': return <AdminDepts />;
       case 'admin-companies': return <AdminCompanyManager />;
-      case 'admin-config': return <AdminAppConfig />; // <--- WIRED UP
+      
+      // Shared Config (Chef + Admin)
+      case 'admin-config': return <AdminAppConfig />;
       
       // HR
       case 'hr-comments': return <HRPlaceholder />;
