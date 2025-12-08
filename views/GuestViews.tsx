@@ -134,4 +134,122 @@ export const GuestPortal: React.FC = () => {
                         </div>
                       </>
                   ) : (
-                      <div className="text-center py-20 bg-slate-800 rounded-xl border border-dashed border-slate-700
+                      <div className="text-center py-20 bg-slate-800 rounded-xl border border-dashed border-slate-700">
+                          <p className="text-slate-400 font-medium">No menu published for {selectedCompany?.name} today.</p>
+                      </div>
+                  )}
+              </div>
+
+              {/* Footer */}
+              {selectedItems.length > 0 && (
+                  <div className="fixed bottom-0 left-0 right-0 p-4 bg-slate-900 border-t border-slate-800 shadow-2xl flex justify-center z-50">
+                      <button 
+                          onClick={handlePlaceOrder}
+                          className="bg-green-600 text-white px-10 py-4 rounded-full font-bold shadow-lg flex items-center gap-2 animate-bounce hover:animate-none hover:bg-green-700 border-4 border-slate-900"
+                      >
+                          Confirm Order ({selectedItems.length} items) <ArrowRight className="w-5 h-5" />
+                      </button>
+                  </div>
+              )}
+          </div>
+      );
+  }
+
+  // --- RENDER: AUTH SCREEN (Dark Mode) ---
+  return (
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-900/20 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-indigo-900/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div className="max-w-md w-full bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-800 relative z-10">
+        <div className="bg-slate-800 p-8 text-center border-b border-slate-700">
+          <div className="inline-flex p-3 bg-blue-600 rounded-xl mb-4 shadow-lg shadow-blue-900/50">
+            <User className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-2xl font-extrabold text-white">Guest Portal</h1>
+          <p className="text-slate-400 mt-1 text-sm">Please identify yourself to order lunch.</p>
+        </div>
+
+        <form onSubmit={handleAuth} className="p-8 space-y-5">
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Visiting Company</label>
+            <div className="relative">
+                <Building className="w-5 h-5 text-slate-400 absolute left-3 top-3.5" />
+                <select 
+                    value={selectedCompanyId}
+                    onChange={e => setSelectedCompanyId(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none appearance-none text-white font-medium"
+                >
+                    <option value="">-- Select Company --</option>
+                    {companies.map(c => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Your Name</label>
+            <div className="relative">
+                <User className="w-5 h-5 text-slate-500 absolute left-3 top-3.5" />
+                <input 
+                    type="text" 
+                    value={guestName} 
+                    onChange={e => setGuestName(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-white placeholder-slate-600"
+                    placeholder="e.g. John Smith"
+                />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Host Contact Info (Email or CUG)</label>
+            <div className="relative">
+                <Phone className="w-5 h-5 text-slate-400 absolute left-3 top-3.5" />
+                <input 
+                    type="text" 
+                    value={hostContact} 
+                    onChange={e => setHostContact(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-white placeholder-slate-600"
+                    placeholder="e.g. jane@facey.com or 876-555-1234"
+                />
+            </div>
+          </div>
+
+          <div className="pt-2">
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Daily Access Code</label>
+            <div className="relative">
+                <Key className="w-5 h-5 text-slate-500 absolute left-3 top-3.5" />
+                <input 
+                    type="text" 
+                    value={passcode} 
+                    onChange={e => setPasscode(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-white font-mono tracking-widest placeholder-slate-700"
+                    placeholder="XXXX"
+                />
+            </div>
+            {/* UPDATED: High Visibility Text */}
+            <p className="text-lg font-bold text-blue-400 mt-3 text-center">
+                Ask reception for today's code.
+            </p>
+          </div>
+
+          <button 
+              type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition-transform active:scale-[0.98] mt-4"
+          >
+              Unlock Menu
+          </button>
+          
+          <button 
+              type="button" 
+              onClick={logout}
+              className="w-full text-center text-sm text-slate-500 hover:text-slate-300 mt-4 transition-colors"
+          >
+              Cancel
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
