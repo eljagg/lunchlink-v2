@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '../store/SupabaseStore';
 import { MenuCategory, MasterFoodItem, DailyMenu, Company } from '../types';
 import { 
@@ -29,7 +29,6 @@ export const AdminKitchenDashboard: React.FC = () => {
   const todaysOrders = orders.filter(o => o.date === today);
   const pendingOrders = todaysOrders.filter(o => o.status === 'Pending').length;
 
-  // Dynamic Branding
   const brandColor = currentCompany?.primaryColor || '#3b82f6';
   const brandName = currentCompany?.name || 'Kitchen Admin';
 
@@ -42,18 +41,12 @@ export const AdminKitchenDashboard: React.FC = () => {
 
   return (
     <div className="space-y-8 pb-20">
-      {/* BRANDED HEADER */}
       <div 
         className="flex items-center justify-between p-6 rounded-2xl shadow-lg border border-slate-700/50"
-        style={{ 
-            background: `linear-gradient(to right, ${brandColor}20, transparent)`, 
-            borderLeft: `8px solid ${brandColor}`
-        }}
+        style={{ background: `linear-gradient(to right, ${brandColor}20, transparent)`, borderLeft: `8px solid ${brandColor}` }}
       >
           <div>
-            <h1 className="text-3xl font-extrabold text-white flex items-center gap-3">
-                {brandName} Command Center
-            </h1>
+            <h1 className="text-3xl font-extrabold text-white flex items-center gap-3">{brandName} Command Center</h1>
             <p className="text-slate-400 text-sm mt-1">Real-time Kitchen Operations</p>
           </div>
           <span className="text-slate-300 font-mono bg-slate-800 px-4 py-2 rounded-lg border border-slate-700">
@@ -64,28 +57,19 @@ export const AdminKitchenDashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-slate-800 p-8 rounded-2xl shadow-lg border-l-8 border-blue-600">
               <div className="flex justify-between items-start">
-                  <div>
-                      <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider">Orders Today</h3>
-                      <p className="text-5xl font-extrabold text-white mt-2">{todaysOrders.length}</p>
-                  </div>
+                  <div><h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider">Orders Today</h3><p className="text-5xl font-extrabold text-white mt-2">{todaysOrders.length}</p></div>
                   <div className="p-3 bg-blue-900/30 rounded-full"><Utensils className="w-6 h-6 text-blue-400" /></div>
               </div>
           </div>
           <div className="bg-slate-800 p-8 rounded-2xl shadow-lg border-l-8 border-yellow-500">
               <div className="flex justify-between items-start">
-                  <div>
-                      <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider">Pending Prep</h3>
-                      <p className="text-5xl font-extrabold text-white mt-2">{pendingOrders}</p>
-                  </div>
+                  <div><h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider">Pending Prep</h3><p className="text-5xl font-extrabold text-white mt-2">{pendingOrders}</p></div>
                   <div className="p-3 bg-yellow-900/30 rounded-full"><Clock className="w-6 h-6 text-yellow-500" /></div>
               </div>
           </div>
           <div className={`p-8 rounded-2xl shadow-lg border-l-8 ${activeIssues.length > 0 ? 'bg-red-900/20 border-red-600' : 'bg-slate-800 border-green-500'}`}>
               <div className="flex justify-between items-start">
-                  <div>
-                      <h3 className={`${activeIssues.length > 0 ? 'text-red-400' : 'text-slate-400'} text-xs font-bold uppercase tracking-wider`}>Active Issues</h3>
-                      <p className={`text-5xl font-extrabold mt-2 ${activeIssues.length > 0 ? 'text-red-500' : 'text-white'}`}>{activeIssues.length}</p>
-                  </div>
+                  <div><h3 className={`${activeIssues.length > 0 ? 'text-red-400' : 'text-slate-400'} text-xs font-bold uppercase tracking-wider`}>Active Issues</h3><p className={`text-5xl font-extrabold mt-2 ${activeIssues.length > 0 ? 'text-red-500' : 'text-white'}`}>{activeIssues.length}</p></div>
                   <div className={`p-3 rounded-full ${activeIssues.length > 0 ? 'bg-red-900/50 animate-pulse' : 'bg-green-900/30'}`}><AlertCircle className={`w-6 h-6 ${activeIssues.length > 0 ? 'text-red-500' : 'text-green-500'}`} /></div>
               </div>
           </div>
@@ -118,7 +102,7 @@ export const AdminKitchenDashboard: React.FC = () => {
 };
 
 // =========================================================
-// 2. MENU MANAGER (Refined to match Employee View)
+// 2. MENU MANAGER (Updated Header to match Employee View)
 // =========================================================
 export const AdminMenuManager: React.FC = () => {
   const { menus, masterFoodItems, addMenu, updateMenu, saveTemplate, loadTemplate, menuTemplates, deleteTemplate, currentUser, currentCompany } = useStore();
@@ -133,8 +117,8 @@ export const AdminMenuManager: React.FC = () => {
   const [isShared, setIsShared] = useState(false);
   const [mode, setMode] = useState<'SAVE' | 'LOAD'>('LOAD');
 
-  // Dynamic Branding for consistency
-  const brandColor = currentCompany?.primaryColor || '#3b82f6';
+  // Dynamic Branding
+  const brandColor = currentCompany?.primaryColor || '#eab308';
   const brandName = currentCompany?.name || 'Company Name';
 
   const currentMenu = menus.find(m => m.date === selectedDate);
@@ -178,15 +162,27 @@ export const AdminMenuManager: React.FC = () => {
   return (
     <div className="space-y-6 pb-20 relative">
       
-      {/* HEADER: Shows Menu Bank Buttons */}
-      <div className="flex justify-between items-center bg-slate-800 p-4 rounded-xl shadow-lg border border-slate-700">
-          <h1 className="text-2xl font-extrabold text-white">Menu Planner</h1>
-          <div className="flex gap-2">
-              <button onClick={() => { setMode('SAVE'); setIsTemplateModalOpen(true); }} className="flex items-center text-green-400 bg-green-900/30 hover:bg-green-900/50 px-4 py-2 rounded-lg font-bold transition-colors border border-green-800">
-                  <Save className="w-4 h-4 mr-2" /> Save to Bank
+      {/* BRANDED HEADER (Identical to Employee View but with Admin Controls) */}
+      <div 
+        className="p-6 rounded-xl shadow-lg border-2 mb-6"
+        style={{ borderColor: brandColor, backgroundColor: `${brandColor}15` }}
+      >
+          <div className="flex justify-between items-start">
+            <div className="text-center w-full">
+                <h1 className="text-xl md:text-2xl font-extrabold uppercase tracking-tight mb-2" style={{ color: brandColor }}>
+                    {brandName} - Menu Planner
+                </h1>
+                <p className="text-slate-400 text-xs uppercase tracking-widest">Planning for: {formatDateDisplay(selectedDate)}</p>
+            </div>
+          </div>
+          
+          {/* Menu Bank Controls embedded in header */}
+          <div className="flex justify-center gap-4 mt-4">
+              <button onClick={() => { setMode('SAVE'); setIsTemplateModalOpen(true); }} className="flex items-center text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-full border bg-white/10 hover:bg-white/20 transition-colors" style={{ color: brandColor, borderColor: brandColor }}>
+                  <Save className="w-4 h-4 mr-2" /> Save Template
               </button>
-              <button onClick={() => { setMode('LOAD'); setIsTemplateModalOpen(true); }} className="flex items-center text-blue-400 bg-blue-900/30 hover:bg-blue-900/50 px-4 py-2 rounded-lg font-bold transition-colors border border-blue-800">
-                  <BookOpen className="w-4 h-4 mr-2" /> Load from Bank
+              <button onClick={() => { setMode('LOAD'); setIsTemplateModalOpen(true); }} className="flex items-center text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-full border bg-white/10 hover:bg-white/20 transition-colors" style={{ color: brandColor, borderColor: brandColor }}>
+                  <BookOpen className="w-4 h-4 mr-2" /> Load Template
               </button>
           </div>
       </div>
@@ -209,7 +205,6 @@ export const AdminMenuManager: React.FC = () => {
                               ? 'text-white font-bold shadow-lg transform scale-105' 
                               : 'border-slate-600 bg-slate-700 hover:bg-slate-600 text-slate-300'
                           }`}
-                          // Dynamic Border Color based on Company
                           style={isSelected ? { backgroundColor: brandColor, borderColor: brandColor } : {}}
                       >
                           <span className="text-xs uppercase">{dayName}</span>
@@ -221,30 +216,17 @@ export const AdminMenuManager: React.FC = () => {
           </div>
       </div>
 
-      {/* BRANDED BANNER / NOTES EDITOR (This matches Employee View) */}
-      <div 
-        className="p-6 rounded-xl shadow-sm border-2 transition-colors"
-        style={{ 
-            borderColor: brandColor,
-            backgroundColor: `${brandColor}15` // Tinted background
-        }}
-      >
-          <div className="text-center mb-4">
-              <h1 className="text-xl md:text-2xl font-extrabold uppercase tracking-tight" style={{ color: brandColor }}>
-                  {brandName} - Lunch Menu
-              </h1>
-              <p className="text-slate-400 text-xs uppercase tracking-widest mt-1">Daily Menu Notes & Prices (Editable)</p>
-          </div>
-          
+      {/* EDITABLE NOTES */}
+      <div className="bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-700">
+          <label className="block text-sm font-bold text-slate-400 mb-2 flex items-center"><FileText className="w-4 h-4 mr-2" /> Daily Notes & Prices (Visible to Staff)</label>
           <textarea 
-              value={currentMenu ? currentMenu.notes : notes} 
-              onChange={(e) => { 
-                  setNotes(e.target.value); 
-                  if(currentMenu) updateMenu({...currentMenu, notes: e.target.value}); 
-              }} 
-              className="w-full p-4 rounded-lg border bg-slate-900/80 focus:ring-2 outline-none text-sm h-24 text-white placeholder-slate-500 resize-none"
-              style={{ borderColor: brandColor, '--tw-ring-color': brandColor } as React.CSSProperties}
-              placeholder="e.g. Soup Price: $500. Enter the daily notes here..." 
+            value={currentMenu ? currentMenu.notes : notes} 
+            onChange={(e) => { 
+                setNotes(e.target.value); 
+                if(currentMenu) updateMenu({...currentMenu, notes: e.target.value}); 
+            }} 
+            className="w-full p-4 rounded-lg border border-slate-600 bg-slate-900 focus:ring-2 focus:ring-blue-500 outline-none text-sm h-24 text-white placeholder-slate-500 resize-none" 
+            placeholder="Type menu notes here..." 
           />
       </div>
 
@@ -270,7 +252,6 @@ export const AdminMenuManager: React.FC = () => {
           </div>
       </div>
 
-      {/* PREVIEW GRID */}
       <div className="space-y-4">
           <div className="flex items-center justify-between">
               <h3 className="text-xl font-bold" style={{ color: brandColor }}>Preview: {formatDateDisplay(selectedDate)}</h3>
@@ -421,17 +402,20 @@ export const AdminCompanyManager: React.FC = () => {
     );
 };
 
-// 5. GLOBAL APP CONFIG
+// 5. GLOBAL APP CONFIG (Fixed Crash)
 export const AdminAppConfig: React.FC = () => {
+    // FIX: Safely handle appConfig if it's slow to load
     const { appConfig, updateAppConfig } = useStore();
-    const [name, setName] = useState(appConfig.companyName);
-    const [cutoff, setCutoff] = useState(appConfig.orderCutoffTime);
-    const [tagline, setTagline] = useState(appConfig.tagline);
+    const [name, setName] = useState('');
+    const [cutoff, setCutoff] = useState('10:30');
+    const [tagline, setTagline] = useState('');
 
     useEffect(() => {
-        setName(appConfig.companyName);
-        setCutoff(appConfig.orderCutoffTime);
-        setTagline(appConfig.tagline);
+        if (appConfig) {
+            setName(appConfig.companyName || '');
+            setCutoff(appConfig.orderCutoffTime || '10:30');
+            setTagline(appConfig.tagline || '');
+        }
     }, [appConfig]);
 
     const handleSave = () => {
