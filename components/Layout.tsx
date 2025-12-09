@@ -1,33 +1,19 @@
-"use client";
-
 import React, { useState } from 'react';
 import { useStore } from '../store/SupabaseStore';
 import { UserRole } from '../types';
-import { 
-  LayoutDashboard, Utensils, History, MessageSquare, Users, 
-  Building, LogOut, FileText, ChefHat, Database, Menu, X, Settings, Truck,
-  LucideIcon 
-} from 'lucide-react';
+import { LayoutDashboard, Utensils, History, MessageSquare, Users, Building, LogOut, FileText, ChefHat, Database, Menu, X, Settings } from 'lucide-react';
 
-// FIX 1: Make props optional so the build doesn't crash if they aren't passed
 interface LayoutProps {
   children: React.ReactNode;
-  activeView?: string; // Optional
-  onNavigate?: (view: string) => void; // Optional
+  activeView: string;
+  onNavigate: (view: string) => void;
 }
 
-const Layout: React.FC<LayoutProps> = ({ 
-  children, 
-  activeView = 'dashboard', // Default value
-  onNavigate = () => {} // Default empty function
-}) => {
+const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate }) => {
   const { currentUser, currentCompany, logout, appConfig } = useStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // SAFEGUARD: Handle loading state gently without crashing
-  if (!currentUser) {
-     return <div className="flex h-screen items-center justify-center bg-slate-950 text-white">Loading...</div>;
-  }
+  if (!currentUser) return <>{children}</>;
 
   const primaryColor = currentCompany?.primaryColor || '#2563eb'; 
   const companyName = currentCompany?.name || appConfig?.companyName || 'LunchLink';
@@ -45,13 +31,10 @@ const Layout: React.FC<LayoutProps> = ({
       if (activeView === 'order') return 'Lunch Menu';
       if (activeView === 'admin-companies') return 'Company Management';
       if (activeView === 'admin-config') return 'Global Settings';
-      if (activeView === 'reception-dashboard') return 'Reception Desk';
-      if (activeView === 'delivery-dashboard') return 'Logistics';
       return activeView.replace('-', ' ');
   };
 
-  // FIX 2: Proper typing for the Icon to satisfy strict linters
-  const NavItem = ({ view, icon: Icon, label }: { view: string, icon: LucideIcon | React.ElementType, label: string }) => {
+  const NavItem = ({ view, icon: Icon, label }: { view: string, icon: any, label: string }) => {
     const isActive = activeView === view;
     return (
       <button
@@ -69,8 +52,6 @@ const Layout: React.FC<LayoutProps> = ({
 
   return (
     <div className="flex h-screen bg-slate-950 overflow-hidden text-slate-200"> 
-      
-      {/* MOBILE HEADER */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-20 bg-slate-900 shadow-md z-30 flex items-center justify-between px-6 border-b border-slate-800">
           <div className="flex items-center space-x-3">
              <div className="p-2 rounded-lg" style={{ backgroundColor: primaryColor }}><Utensils className="w-6 h-6 text-white" /></div>
@@ -81,10 +62,8 @@ const Layout: React.FC<LayoutProps> = ({
           </button>
       </div>
 
-      {/* MOBILE OVERLAY */}
       {isMobileMenuOpen && ( <div className="fixed inset-0 bg-black/80 z-30 md:hidden" onClick={() => setIsMobileMenuOpen(false)} /> )}
 
-      {/* SIDEBAR */}
       <aside className={`
           fixed md:relative z-40 h-full w-64 bg-slate-950 shadow-2xl flex flex-col transition-transform duration-300 ease-in-out border-r border-slate-800
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} 
@@ -101,7 +80,6 @@ const Layout: React.FC<LayoutProps> = ({
 
         <div className="flex-1 overflow-y-auto py-4 mt-20 md:mt-0">
           <div className="px-4 mb-2 text-xs font-bold text-slate-500 uppercase tracking-wider">Menu</div>
-          
           <NavItem view="dashboard" icon={LayoutDashboard} label="Dashboard" />
           
           {currentUser.role === UserRole.EMPLOYEE && (
@@ -120,7 +98,7 @@ const Layout: React.FC<LayoutProps> = ({
               <NavItem view="admin-menus" icon={Utensils} label="Manage Menus" />
               <NavItem view="admin-food-db" icon={Database} label="Food Database" />
               <NavItem view="messages" icon={MessageSquare} label="Message Box" />
-              <NavItem view="admin-config" icon={Settings} label="Kitchen Settings" />
+              <NavItem view="admin-config" icon={Settings} label="Kitchen Settings" /> {/* <--- NEW LINK FOR CHEF */}
             </>
           )}
 
@@ -130,21 +108,10 @@ const Layout: React.FC<LayoutProps> = ({
               <NavItem view="admin-companies" icon={Building} label="Companies" />
               <NavItem view="admin-users" icon={Users} label="Manage Users" />
               <NavItem view="admin-depts" icon={Settings} label="Departments" />
-              <NavItem view="admin-config" icon={FileText} label="App Config" />
             </>
           )}
 
-          {currentUser.role === UserRole.HR && (
-             <NavItem view="hr-comments" icon={MessageSquare} label="Employee Comments" />
-          )}
-
-          {currentUser.role === UserRole.RECEPTIONIST && (
-             <NavItem view="reception-dashboard" icon={Users} label="Reception Desk" />
-          )}
-
-          {currentUser.role === UserRole.DELIVERY && (
-             <NavItem view="delivery-dashboard" icon={Truck} label="Logistics" />
-          )}
+          {currentUser.role === UserRole.HR && ( <NavItem view="hr-comments" icon={MessageSquare} label="Employee Comments" /> )}
         </div>
 
         <div className="p-4 border-t border-slate-800 bg-slate-900">
@@ -167,10 +134,7 @@ const Layout: React.FC<LayoutProps> = ({
                 {getHeaderTitle()}
             </h1>
             <button 
-                onClick={() => {
-                  if (currentUser.role === UserRole.EMPLOYEE) onNavigate('order');
-                  else if (currentUser.role === UserRole.KITCHEN_ADMIN) onNavigate('admin-kitchen');
-                }}
+                onClick={() => onNavigate('order')}
                 className="text-sm font-medium hover:underline transition-all" 
                 style={{ color: primaryColor }}
             >
