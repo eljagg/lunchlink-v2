@@ -134,12 +134,12 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate }) => 
              <NavItem view="hr-comments" icon={MessageSquare} label="Employee Comments" />
           )}
 
-          {/* RECEPTION SECTION */}
+          {/* RECEPTION SECTION (Added) */}
           {currentUser.role === UserRole.RECEPTIONIST && (
              <NavItem view="reception-dashboard" icon={Users} label="Reception Desk" />
           )}
 
-          {/* LOGISTICS SECTION (New) */}
+          {/* LOGISTICS SECTION */}
           {currentUser.role === UserRole.DELIVERY && (
              <NavItem view="delivery-dashboard" icon={Truck} label="Logistics" />
           )}
