@@ -1,22 +1,33 @@
+"use client";
+
 import React, { useState } from 'react';
 import { useStore } from '../store/SupabaseStore';
 import { UserRole } from '../types';
 import { 
   LayoutDashboard, Utensils, History, MessageSquare, Users, 
-  Building, LogOut, FileText, ChefHat, Database, Menu, X, Settings, Truck 
-} from 'lucide-react'; // Added Truck icon
+  Building, LogOut, FileText, ChefHat, Database, Menu, X, Settings, Truck,
+  LucideIcon 
+} from 'lucide-react';
 
+// FIX 1: Make props optional so the build doesn't crash if they aren't passed
 interface LayoutProps {
   children: React.ReactNode;
-  activeView: string;
-  onNavigate: (view: string) => void;
+  activeView?: string; // Optional
+  onNavigate?: (view: string) => void; // Optional
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate }) => {
+const Layout: React.FC<LayoutProps> = ({ 
+  children, 
+  activeView = 'dashboard', // Default value
+  onNavigate = () => {} // Default empty function
+}) => {
   const { currentUser, currentCompany, logout, appConfig } = useStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  if (!currentUser) return <>{children}</>;
+  // SAFEGUARD: Handle loading state gently without crashing
+  if (!currentUser) {
+     return <div className="flex h-screen items-center justify-center bg-slate-950 text-white">Loading...</div>;
+  }
 
   const primaryColor = currentCompany?.primaryColor || '#2563eb'; 
   const companyName = currentCompany?.name || appConfig?.companyName || 'LunchLink';
@@ -39,7 +50,8 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate }) => 
       return activeView.replace('-', ' ');
   };
 
-  const NavItem = ({ view, icon: Icon, label }: { view: string, icon: any, label: string }) => {
+  // FIX 2: Proper typing for the Icon to satisfy strict linters
+  const NavItem = ({ view, icon: Icon, label }: { view: string, icon: LucideIcon | React.ElementType, label: string }) => {
     const isActive = activeView === view;
     return (
       <button
@@ -90,10 +102,8 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate }) => 
         <div className="flex-1 overflow-y-auto py-4 mt-20 md:mt-0">
           <div className="px-4 mb-2 text-xs font-bold text-slate-500 uppercase tracking-wider">Menu</div>
           
-          {/* SHARED DASHBOARD */}
           <NavItem view="dashboard" icon={LayoutDashboard} label="Dashboard" />
           
-          {/* EMPLOYEE SECTION */}
           {currentUser.role === UserRole.EMPLOYEE && (
             <>
               <NavItem view="order" icon={Utensils} label="Lunch Menu" />
@@ -103,7 +113,6 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate }) => 
             </>
           )}
 
-          {/* KITCHEN SECTION */}
           {(currentUser.role === UserRole.KITCHEN_ADMIN || currentUser.role === UserRole.SUPER_ADMIN) && (
             <>
               <div className="mt-6 px-4 mb-2 text-xs font-bold text-slate-500 uppercase tracking-wider">Kitchen Admin</div>
@@ -115,7 +124,6 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate }) => 
             </>
           )}
 
-          {/* SUPER ADMIN SECTION */}
           {currentUser.role === UserRole.SUPER_ADMIN && (
             <>
               <div className="mt-6 px-4 mb-2 text-xs font-bold text-slate-500 uppercase tracking-wider">Super Admin</div>
@@ -126,17 +134,14 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate }) => 
             </>
           )}
 
-          {/* HR SECTION */}
           {currentUser.role === UserRole.HR && (
              <NavItem view="hr-comments" icon={MessageSquare} label="Employee Comments" />
           )}
 
-          {/* RECEPTION SECTION (New) */}
           {currentUser.role === UserRole.RECEPTIONIST && (
              <NavItem view="reception-dashboard" icon={Users} label="Reception Desk" />
           )}
 
-          {/* DELIVERY SECTION (New) */}
           {currentUser.role === UserRole.DELIVERY && (
              <NavItem view="delivery-dashboard" icon={Truck} label="Logistics" />
           )}
