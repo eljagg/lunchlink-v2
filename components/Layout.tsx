@@ -1,7 +1,13 @@
+"use client";
+
 import React, { useState } from 'react';
 import { useStore } from '../store/SupabaseStore';
 import { UserRole } from '../types';
-import { LayoutDashboard, Utensils, History, MessageSquare, Users, Building, LogOut, FileText, ChefHat, Database, Menu, X, Settings } from 'lucide-react';
+import { 
+  LayoutDashboard, Utensils, History, MessageSquare, Users, 
+  Building, LogOut, FileText, ChefHat, Database, Menu, X, Settings, 
+  Truck 
+} from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -31,6 +37,8 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate }) => 
       if (activeView === 'order') return 'Lunch Menu';
       if (activeView === 'admin-companies') return 'Company Management';
       if (activeView === 'admin-config') return 'Global Settings';
+      if (activeView === 'reception-dashboard') return 'Reception Desk';
+      if (activeView === 'delivery-dashboard') return 'Logistics';
       return activeView.replace('-', ' ');
   };
 
@@ -52,6 +60,8 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate }) => 
 
   return (
     <div className="flex h-screen bg-slate-950 overflow-hidden text-slate-200"> 
+      
+      {/* MOBILE HEADER */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-20 bg-slate-900 shadow-md z-30 flex items-center justify-between px-6 border-b border-slate-800">
           <div className="flex items-center space-x-3">
              <div className="p-2 rounded-lg" style={{ backgroundColor: primaryColor }}><Utensils className="w-6 h-6 text-white" /></div>
@@ -62,8 +72,10 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate }) => 
           </button>
       </div>
 
+      {/* MOBILE OVERLAY */}
       {isMobileMenuOpen && ( <div className="fixed inset-0 bg-black/80 z-30 md:hidden" onClick={() => setIsMobileMenuOpen(false)} /> )}
 
+      {/* SIDEBAR */}
       <aside className={`
           fixed md:relative z-40 h-full w-64 bg-slate-950 shadow-2xl flex flex-col transition-transform duration-300 ease-in-out border-r border-slate-800
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} 
@@ -80,8 +92,11 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate }) => 
 
         <div className="flex-1 overflow-y-auto py-4 mt-20 md:mt-0">
           <div className="px-4 mb-2 text-xs font-bold text-slate-500 uppercase tracking-wider">Menu</div>
+          
+          {/* SHARED DASHBOARD */}
           <NavItem view="dashboard" icon={LayoutDashboard} label="Dashboard" />
           
+          {/* EMPLOYEE SECTION */}
           {currentUser.role === UserRole.EMPLOYEE && (
             <>
               <NavItem view="order" icon={Utensils} label="Lunch Menu" />
@@ -91,6 +106,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate }) => 
             </>
           )}
 
+          {/* KITCHEN SECTION */}
           {(currentUser.role === UserRole.KITCHEN_ADMIN || currentUser.role === UserRole.SUPER_ADMIN) && (
             <>
               <div className="mt-6 px-4 mb-2 text-xs font-bold text-slate-500 uppercase tracking-wider">Kitchen Admin</div>
@@ -98,20 +114,35 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate }) => 
               <NavItem view="admin-menus" icon={Utensils} label="Manage Menus" />
               <NavItem view="admin-food-db" icon={Database} label="Food Database" />
               <NavItem view="messages" icon={MessageSquare} label="Message Box" />
-              <NavItem view="admin-config" icon={Settings} label="Kitchen Settings" /> {/* <--- NEW LINK FOR CHEF */}
+              <NavItem view="admin-config" icon={Settings} label="Kitchen Settings" />
             </>
           )}
 
+          {/* SUPER ADMIN SECTION */}
           {currentUser.role === UserRole.SUPER_ADMIN && (
             <>
               <div className="mt-6 px-4 mb-2 text-xs font-bold text-slate-500 uppercase tracking-wider">Super Admin</div>
               <NavItem view="admin-companies" icon={Building} label="Companies" />
               <NavItem view="admin-users" icon={Users} label="Manage Users" />
               <NavItem view="admin-depts" icon={Settings} label="Departments" />
+              <NavItem view="admin-config" icon={FileText} label="App Config" />
             </>
           )}
 
-          {currentUser.role === UserRole.HR && ( <NavItem view="hr-comments" icon={MessageSquare} label="Employee Comments" /> )}
+          {/* HR SECTION */}
+          {currentUser.role === UserRole.HR && (
+             <NavItem view="hr-comments" icon={MessageSquare} label="Employee Comments" />
+          )}
+
+          {/* RECEPTION SECTION */}
+          {currentUser.role === UserRole.RECEPTIONIST && (
+             <NavItem view="reception-dashboard" icon={Users} label="Reception Desk" />
+          )}
+
+          {/* LOGISTICS SECTION (New) */}
+          {currentUser.role === UserRole.DELIVERY && (
+             <NavItem view="delivery-dashboard" icon={Truck} label="Logistics" />
+          )}
         </div>
 
         <div className="p-4 border-t border-slate-800 bg-slate-900">
@@ -134,7 +165,10 @@ const Layout: React.FC<LayoutProps> = ({ children, activeView, onNavigate }) => 
                 {getHeaderTitle()}
             </h1>
             <button 
-                onClick={() => onNavigate('order')}
+                onClick={() => {
+                  if (currentUser.role === UserRole.EMPLOYEE) onNavigate('order');
+                  else if (currentUser.role === UserRole.KITCHEN_ADMIN) onNavigate('admin-kitchen');
+                }}
                 className="text-sm font-medium hover:underline transition-all" 
                 style={{ color: primaryColor }}
             >
