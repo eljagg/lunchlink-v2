@@ -16,12 +16,22 @@ export const ReceptionDashboard: React.FC = () => {
     const handleEmail = (e: React.FormEvent) => {
         e.preventDefault();
         setIsSending(true);
-        // Simulate API call
-        setTimeout(() => {
-            alert(`Code sent to ${email}`);
-            setIsSending(false);
-            setEmail('');
-        }, 1000);
+
+        const subject = encodeURIComponent("LunchLink Guest Access Code");
+        const body = encodeURIComponent(
+            `Welcome to ${currentCompany?.name || 'LunchLink'}!\n\n` +
+            `Your guest access code for today is: ${appConfig.guestPasscode}\n\n` +
+            `Please visit the portal to place your order.`
+        );
+
+        // Open the default email client with pre-filled details
+        window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+
+        // Reset the UI
+        setIsSending(false);
+        setEmail('');
+        // Optional: Slight delay to allow the mail client to trigger before clearing
+        setTimeout(() => alert(`Opened email draft for ${email}`), 500);
     };
 
     return (
