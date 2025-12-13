@@ -17,11 +17,12 @@ interface StoreData {
   // USER MANAGEMENT
   addUser: (u: User) => Promise<void>; 
   updateUser: (u: User) => Promise<void>; 
+  importUsers: (users: User[]) => Promise<void>; // <--- NEW BULK IMPORT
   lockUser: (id: string, lock: boolean) => Promise<void>;
   
   // DEPT MANAGEMENT
   addDepartment: (d: Department) => Promise<void>; 
-  updateDepartment: (d: Department) => Promise<void>; // <--- NEW: Added Update Function
+  updateDepartment: (d: Department) => Promise<void>;
   deleteDepartment: (id: string) => Promise<void>;
 
   updateOrderStatus: (id: string, s: Order['status']) => Promise<void>;
@@ -109,11 +110,31 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // USER MANAGEMENT
   const addUser = async (u: User) => { setUsers(p => [...p, u]); await supabase.from('app_users').insert({ id: u.id, username: u.username, full_name: u.fullName, role: u.role, email: u.email, department_id: u.departmentId, company_id: u.companyId }); };
   const updateUser = async (u: User) => { setUsers(p => p.map(x => x.id === u.id ? u : x)); await supabase.from('app_users').update({ username: u.username, full_name: u.fullName, role: u.role, email: u.email, department_id: u.departmentId, company_id: u.companyId }).eq('id', u.id); };
+  // NEW BULK IMPORT FUNCTION
+  const importUsers = async (newUsers: User[]) => {
+      // 1. Optimistically update UI
+      setUsers(prev => [...prev, ...newUsers]);
+      
+      // 2. Prepare data for Supabase (map keys to snake_case if needed, though our types match mostly)
+      const dbRows = newUsers.map(u => ({
+          id: u.id,
+          username: u.username,
+          full_name: u.fullName,
+          role: u.role,
+          email: u.email,
+          department_id: u.departmentId,
+          company_id: u.companyId,
+          is_locked: false
+      }));
+
+      // 3. Bulk Insert
+      await supabase.from('app_users').insert(dbRows);
+  };
   const lockUser = async (id: string, l: boolean) => { setUsers(p => p.map(u => u.id === id ? { ...u, isLocked: l } : u)); await supabase.from('app_users').update({ is_locked: l }).eq('id', id); };
   
   // DEPT MANAGEMENT
   const addDepartment = async (d: Department) => { setDepartments(p => [...p, d]); await supabase.from('departments').insert({ id: d.id, name: d.name }); };
-  const updateDepartment = async (d: Department) => { setDepartments(p => p.map(x => x.id === d.id ? d : x)); await supabase.from('departments').update({ name: d.name }).eq('id', d.id); }; // <--- NEW UPDATE FUNCTION
+  const updateDepartment = async (d: Department) => { setDepartments(p => p.map(x => x.id === d.id ? d : x)); await supabase.from('departments').update({ name: d.name }).eq('id', d.id); };
   const deleteDepartment = async (id: string) => { setDepartments(p => p.filter(d => d.id !== id)); await supabase.from('departments').delete().eq('id', id); };
 
   const updateOrderStatus = async (id: string, s: Order['status']) => { setOrders(p => p.map(o => o.id === id ? { ...o, status: s } : o)); await supabase.from('orders').update({ status: s }).eq('id', id); };
@@ -144,7 +165,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       login, logout, addMenu, updateMenu, copyMenuFromDate, saveTemplate, loadTemplate, deleteTemplate,
       addMasterItem, updateMasterItem, deleteMasterItem, lockUser, addDepartment, updateDepartment, deleteDepartment, updateOrderStatus, placeOrder, sendMessage, addComment, respondToComment, reportIssue, respondToIssue,
       addCompany, updateCompany, deleteCompany, updateAppConfig, loginAsGuest, placeGuestOrder,
-      generateNewGuestCode, markBatchDelivered, addUser, updateUser,
+      generateNewGuestCode, markBatchDelivered, addUser, updateUser, importUsers, // Added importUsers
       importData, exportData
     }}>
       {children}
