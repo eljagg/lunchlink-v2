@@ -16,8 +16,6 @@ const formatDateDisplay = (dateStr: string) => {
     return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 };
 
-// ... [AdminKitchenDashboard, AdminMenuManager, KitchenMasterDatabase, AdminCompanyManager, AdminAppConfig, AdminUserManager are unchanged. I'm outputting the FULL file for safety.] ...
-
 // =========================================================
 // 1. KITCHEN DASHBOARD
 // =========================================================
@@ -555,7 +553,7 @@ export const AdminUserManager: React.FC = () => {
 };
 
 // =========================================================
-// 7. DEPARTMENT MANAGER (UPDATED WITH EDIT)
+// 7. DEPARTMENT MANAGER (Buttons Always Visible)
 // =========================================================
 export const AdminDepts: React.FC = () => {
     const { departments, addDepartment, updateDepartment, deleteDepartment } = useStore();
@@ -624,7 +622,7 @@ export const AdminDepts: React.FC = () => {
                     {departments.map(d => (
                         <div key={d.id} className="flex justify-between items-center bg-slate-700/50 p-3 rounded hover:bg-slate-700 transition-colors group">
                             <span className="text-white font-medium">{d.name}</span>
-                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex gap-2"> {/* Removed opacity-0 group-hover:opacity-100 */}
                                 <button onClick={() => handleEdit(d)} className="text-blue-400 hover:bg-blue-900/30 p-2 rounded transition-colors" title="Edit">
                                     <Edit2 className="w-4 h-4" />
                                 </button>
