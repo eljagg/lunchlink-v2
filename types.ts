@@ -1,10 +1,7 @@
-// src/types.ts
-
-// CRITICAL: These values must match the lowercase strings in your Supabase Database
 export enum UserRole {
   EMPLOYEE = 'employee',
   KITCHEN_ADMIN = 'kitchen_admin',
-  SUPER_ADMIN = 'super_admin', // This must be lowercase 'super_admin' to match the DB
+  SUPER_ADMIN = 'super_admin', // CHANGED FROM 'SUPER_ADMIN' TO 'super_admin'
   HR = 'hr',
   DELIVERY = 'delivery',
   RECEPTIONIST = 'receptionist',
