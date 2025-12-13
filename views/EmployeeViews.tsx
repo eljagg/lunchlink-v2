@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/SupabaseStore';
-import { Order, MenuCategory, MenuIssue, Message, Comment } from '../types';
-import { Calendar, Utensils, FileText, ChevronRight, ChevronLeft, AlertCircle, MessageCircle, X, Clock, CheckCircle, XCircle, Send, MessageSquare, Info, TrendingUp } from 'lucide-react';
+import { Order } from '../types';
+import { Calendar, Utensils, FileText, ChevronRight, ChevronLeft, AlertCircle, MessageCircle, X, Clock, Info, TrendingUp } from 'lucide-react';
 import { MenuGrid } from '../components/MenuGrid';
 
 const toLocalISOString = (date: Date) => {
@@ -16,7 +16,6 @@ const formatDateDisplay = (dateStr: string) => {
 // 1. ORDER LUNCH VIEW
 export const OrderLunchView: React.FC = () => {
   const { menus, placeOrder, currentUser, reportIssue, menuIssues, appConfig, orders } = useStore();
-  const getTodayStr = () => new Date().toLocaleDateString('en-CA');
   
   // Smart Date Initialization
   const getInitialDateState = () => {
@@ -44,8 +43,7 @@ export const OrderLunchView: React.FC = () => {
   const [isIssueDrawerOpen, setIsIssueDrawerOpen] = useState(false);
   const [issueText, setIssueText] = useState('');
   
-  // FIXED: STRICT FILTERING BY COMPANY ID
-  // This prevents the app from showing a blank "ghost" menu if multiple exist for the same date
+  // STRICT FILTERING BY COMPANY ID
   const menuForDay = menus.find(m => 
       m.date === selectedDate && 
       m.companyId === currentUser?.companyId
@@ -124,7 +122,6 @@ export const OrderLunchView: React.FC = () => {
   return (
     <div className="space-y-6 pb-32 relative">
       
-      {/* INJECTED STYLES FOR MARQUEE ANIMATION */}
       <style>{`
         @keyframes marquee {
           0% { transform: translateX(100%); }
@@ -133,21 +130,17 @@ export const OrderLunchView: React.FC = () => {
         .animate-marquee {
           animation: marquee 15s linear infinite;
         }
-        /* Pause animation on hover so user can read */
         .marquee-container:hover .animate-marquee {
           animation-play-state: paused;
         }
       `}</style>
 
-      {/* AUTO-SWITCH NOTIFICATION BANNER (SCROLLING TICKER) */}
+      {/* AUTO-SWITCH NOTIFICATION BANNER */}
       {showAutoSwitchMsg && (
           <div className="bg-blue-900 border-y border-blue-500 text-white shadow-lg relative overflow-hidden h-12 flex items-center marquee-container group">
-              {/* Static Icon on Left */}
               <div className="absolute left-0 top-0 bottom-0 bg-blue-800 z-10 px-4 flex items-center shadow-lg">
                   <Info className="w-5 h-5 text-blue-300 animate-pulse" />
               </div>
-
-              {/* Scrolling Text */}
               <div className="flex-1 overflow-hidden relative h-full">
                   <div className="animate-marquee whitespace-nowrap absolute top-1/2 -translate-y-1/2 flex items-center gap-8">
                       <span className="font-bold text-sm tracking-wide">NOTICE: It is past the {appConfig?.orderCutoffTime} cutoff time.</span>
@@ -155,21 +148,26 @@ export const OrderLunchView: React.FC = () => {
                       <span className="font-bold text-sm tracking-wide text-blue-300">--- PLEASE CHECK YOUR DATE SELECTION ---</span>
                   </div>
               </div>
-
-              {/* Close Button on Right */}
               <div className="absolute right-0 top-0 bottom-0 bg-blue-800 z-10 px-4 flex items-center shadow-lg cursor-pointer hover:bg-blue-700 transition-colors" onClick={() => setShowAutoSwitchMsg(false)}>
                   <X className="w-5 h-5 text-white" />
               </div>
           </div>
       )}
 
-      {/* HEADER BANNER */}
-      <div className="border-2 p-6 text-center rounded-xl shadow-lg transition-colors" style={{ borderColor: brandColor, backgroundColor: `${brandColor}15` }}>
-          <h1 className="text-xl md:text-2xl font-extrabold uppercase tracking-tight mb-2" style={{ color: brandColor }}>{brandName} - Lunch Menu</h1>
-          <p className="font-bold text-slate-300 whitespace-pre-wrap">{menuForDay.notes || "Menu details for this day have not been published yet."}</p>
+      {/* HEADER BANNER - UPDATED: LARGER & BLINKING */}
+      <div 
+        className="border-4 p-8 text-center rounded-3xl shadow-2xl transition-all animate-pulse" 
+        style={{ borderColor: brandColor, backgroundColor: `${brandColor}20`, boxShadow: `0 0 30px ${brandColor}30` }}
+      >
+          <h1 className="text-3xl md:text-5xl font-extrabold uppercase tracking-tight mb-4 drop-shadow-md" style={{ color: brandColor }}>
+            {brandName} - Lunch Menu
+          </h1>
+          <p className="font-extrabold text-white text-xl md:text-3xl whitespace-pre-wrap leading-relaxed">
+            {menuForDay.notes || "Menu details for this day have not been published yet."}
+          </p>
       </div>
 
-      {/* DATE SELECTOR (Darker) */}
+      {/* DATE SELECTOR */}
       <div className="bg-slate-900 p-6 rounded-xl shadow-lg border border-slate-800 mt-8">
         <div className="flex justify-between items-center mb-4">
             <div className="flex flex-col">
@@ -191,7 +189,6 @@ export const OrderLunchView: React.FC = () => {
                 const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' }); 
                 const dayNum = dateObj.getDate(); 
                 
-                // FIXED: Check if menu exists FOR THIS COMPANY
                 const hasMenu = menus.some(m => m.date === dateStr && m.companyId === currentUser?.companyId); 
                 
                 return (<button key={dateStr} onClick={() => { setSelectedDate(dateStr); setShowAutoSwitchMsg(false); }} className={`flex flex-col items-center justify-center flex-shrink-0 w-36 h-28 p-2 rounded-xl border-2 transition-all relative gap-1 ${isSelected ? 'border-blue-600 bg-blue-600 text-white font-extrabold transform scale-105 shadow-xl z-10' : 'border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-400'}`}><span className="text-xs font-bold uppercase tracking-wide">{dayName}</span><span className="text-3xl font-bold">{dayNum}</span>{hasMenu && <div className={`w-2 h-2 rounded-full ${isSelected ? 'bg-white' : 'bg-green-500'}`}></div>}</button>); 
@@ -201,7 +198,7 @@ export const OrderLunchView: React.FC = () => {
 
       <div className="flex items-center justify-between"><h3 className="text-lg font-semibold text-slate-300">Menu for {formatDateDisplay(selectedDate)}</h3></div>
 
-      {/* --- SPLIT LAYOUT (Dark) --- */}
+      {/* --- SPLIT LAYOUT --- */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-3"><MenuGrid items={menuForDay.items} selectedItemIds={selectedItems} onItemClick={toggleItem} /></div>
           <div className="lg:col-span-1 flex flex-col gap-6">
