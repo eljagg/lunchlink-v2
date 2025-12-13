@@ -44,7 +44,13 @@ export const OrderLunchView: React.FC = () => {
   const [isIssueDrawerOpen, setIsIssueDrawerOpen] = useState(false);
   const [issueText, setIssueText] = useState('');
   
-  const menuForDay = menus.find(m => m.date === selectedDate) || { id: 'temp-empty', date: selectedDate, items: [], notes: '' };
+  // FIXED: STRICT FILTERING BY COMPANY ID
+  // This prevents the app from showing a blank "ghost" menu if multiple exist for the same date
+  const menuForDay = menus.find(m => 
+      m.date === selectedDate && 
+      m.companyId === currentUser?.companyId
+  ) || { id: 'temp-empty', date: selectedDate, items: [], notes: '' };
+
   const myIssues = menuIssues.filter(i => i.date === selectedDate && i.userId === currentUser?.id);
 
   // Dynamic Branding
@@ -179,7 +185,17 @@ export const OrderLunchView: React.FC = () => {
             <div className="flex items-center space-x-2 bg-slate-800 rounded-full p-1"><button onClick={() => setWeekOffset(weekOffset - 1)} className="p-1 hover:bg-slate-700 rounded-full text-white"><ChevronLeft className="w-4 h-4" /></button><button onClick={() => setWeekOffset(weekOffset + 1)} className="p-1 hover:bg-slate-700 rounded-full text-white"><ChevronRight className="w-4 h-4" /></button></div>
         </div>
         <div className="flex gap-4 overflow-x-auto pb-6 pt-2">
-            {weekDates.map((dateObj) => { const dateStr = toLocalISOString(dateObj); const isSelected = dateStr === selectedDate; const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' }); const dayNum = dateObj.getDate(); const hasMenu = menus.some(m => m.date === dateStr); return (<button key={dateStr} onClick={() => { setSelectedDate(dateStr); setShowAutoSwitchMsg(false); }} className={`flex flex-col items-center justify-center flex-shrink-0 w-36 h-28 p-2 rounded-xl border-2 transition-all relative gap-1 ${isSelected ? 'border-blue-600 bg-blue-600 text-white font-extrabold transform scale-105 shadow-xl z-10' : 'border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-400'}`}><span className="text-xs font-bold uppercase tracking-wide">{dayName}</span><span className="text-3xl font-bold">{dayNum}</span>{hasMenu && <div className={`w-2 h-2 rounded-full ${isSelected ? 'bg-white' : 'bg-green-500'}`}></div>}</button>); })}
+            {weekDates.map((dateObj) => { 
+                const dateStr = toLocalISOString(dateObj); 
+                const isSelected = dateStr === selectedDate; 
+                const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' }); 
+                const dayNum = dateObj.getDate(); 
+                
+                // FIXED: Check if menu exists FOR THIS COMPANY
+                const hasMenu = menus.some(m => m.date === dateStr && m.companyId === currentUser?.companyId); 
+                
+                return (<button key={dateStr} onClick={() => { setSelectedDate(dateStr); setShowAutoSwitchMsg(false); }} className={`flex flex-col items-center justify-center flex-shrink-0 w-36 h-28 p-2 rounded-xl border-2 transition-all relative gap-1 ${isSelected ? 'border-blue-600 bg-blue-600 text-white font-extrabold transform scale-105 shadow-xl z-10' : 'border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-400'}`}><span className="text-xs font-bold uppercase tracking-wide">{dayName}</span><span className="text-3xl font-bold">{dayNum}</span>{hasMenu && <div className={`w-2 h-2 rounded-full ${isSelected ? 'bg-white' : 'bg-green-500'}`}></div>}</button>); 
+            })}
         </div>
       </div>
 
