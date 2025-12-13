@@ -21,6 +21,7 @@ interface StoreData {
   
   // DEPT MANAGEMENT
   addDepartment: (d: Department) => Promise<void>; 
+  updateDepartment: (d: Department) => Promise<void>; // <--- NEW: Added Update Function
   deleteDepartment: (id: string) => Promise<void>;
 
   updateOrderStatus: (id: string, s: Order['status']) => Promise<void>;
@@ -30,7 +31,7 @@ interface StoreData {
   generateNewGuestCode: () => Promise<string>;
 
   placeOrder: (o: Order) => Promise<void>; sendMessage: (m: Message) => Promise<void>; addComment: (c: Comment) => Promise<void>; 
-  respondToComment: (id: string, r: string, u: User) => Promise<void>; // Fixed signature
+  respondToComment: (id: string, r: string, u: User) => Promise<void>;
   reportIssue: (i: MenuIssue) => Promise<void>; respondToIssue: (id: string, r: string) => Promise<void>;
   addCompany: (c: Company) => Promise<void>; updateCompany: (c: Company) => Promise<void>; deleteCompany: (id: string) => Promise<void>;
   importData: (data: any) => void; exportData: () => any;
@@ -105,13 +106,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const updateMasterItem = async (i: MasterFoodItem) => { setMasterFoodItems(p => p.map(x => x.id === i.id ? i : x)); await supabase.from('master_food_items').update({ name: i.name, category: i.category, calories: i.calories, description: i.description, dietary_info: i.dietaryInfo }).eq('id', i.id); };
   const deleteMasterItem = async (id: string) => { setMasterFoodItems(p => p.filter(i => i.id !== id)); await supabase.from('master_food_items').delete().eq('id', id); };
   
-  // USER MANAGEMENT (Implemented)
+  // USER MANAGEMENT
   const addUser = async (u: User) => { setUsers(p => [...p, u]); await supabase.from('app_users').insert({ id: u.id, username: u.username, full_name: u.fullName, role: u.role, email: u.email, department_id: u.departmentId, company_id: u.companyId }); };
   const updateUser = async (u: User) => { setUsers(p => p.map(x => x.id === u.id ? u : x)); await supabase.from('app_users').update({ username: u.username, full_name: u.fullName, role: u.role, email: u.email, department_id: u.departmentId, company_id: u.companyId }).eq('id', u.id); };
   const lockUser = async (id: string, l: boolean) => { setUsers(p => p.map(u => u.id === id ? { ...u, isLocked: l } : u)); await supabase.from('app_users').update({ is_locked: l }).eq('id', id); };
   
-  // DEPT MANAGEMENT (Implemented)
+  // DEPT MANAGEMENT
   const addDepartment = async (d: Department) => { setDepartments(p => [...p, d]); await supabase.from('departments').insert({ id: d.id, name: d.name }); };
+  const updateDepartment = async (d: Department) => { setDepartments(p => p.map(x => x.id === d.id ? d : x)); await supabase.from('departments').update({ name: d.name }).eq('id', d.id); }; // <--- NEW UPDATE FUNCTION
   const deleteDepartment = async (id: string) => { setDepartments(p => p.filter(d => d.id !== id)); await supabase.from('departments').delete().eq('id', id); };
 
   const updateOrderStatus = async (id: string, s: Order['status']) => { setOrders(p => p.map(o => o.id === id ? { ...o, status: s } : o)); await supabase.from('orders').update({ status: s }).eq('id', id); };
@@ -121,13 +123,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const updateAppConfig = async (c: AppConfig) => { setAppConfig(c); await supabase.from('app_config').update({ company_name: c.companyName, tagline: c.tagline, order_cutoff_time: c.orderCutoffTime, guest_mode: c.guestMode, guest_passcode: c.guestPasscode, guest_qr_token: c.guestQrToken }).eq('id', 1); };
   const placeOrder = async (o: Order) => { setOrders(p => [...p, o]); await supabase.from('orders').insert({ id: o.id, user_id: o.userId, menu_id: o.menuId, selected_item_ids: o.selectedItemIds, date: o.date, special_instructions: o.specialInstructions, status: o.status, timestamp: o.timestamp, company_id: currentUser?.companyId }); };
   const sendMessage = async (m: Message) => setMessages(p => [...p, m]);
-  
-  // HR COMMENTS (Implemented)
   const addComment = async (c: Comment) => { setComments(p => [...p, c]); await supabase.from('comments').insert({ id: c.id, user_id: c.userId, user_name: c.userName, content: c.content, timestamp: c.timestamp }); };
   const respondToComment = async (id: string, r: string, u: User) => {
       const responseObj = { responder: u.fullName, text: r, timestamp: Date.now() };
       setComments(p => p.map(c => c.id === id ? { ...c, responses: [...c.responses, responseObj] } : c));
-      // Fetch existing, append, update (simplified for optimistic UI)
       const existing = comments.find(c => c.id === id);
       if(existing) { await supabase.from('comments').update({ responses: [...existing.responses, responseObj] }).eq('id', id); }
   };
@@ -143,7 +142,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     <StoreContext.Provider value={{
       currentUser, currentCompany, users, menus, orders, messages, comments, menuIssues, departments, appConfig, masterFoodItems, menuTemplates, companies, isLoading,
       login, logout, addMenu, updateMenu, copyMenuFromDate, saveTemplate, loadTemplate, deleteTemplate,
-      addMasterItem, updateMasterItem, deleteMasterItem, lockUser, addDepartment, deleteDepartment, updateOrderStatus, placeOrder, sendMessage, addComment, respondToComment, reportIssue, respondToIssue,
+      addMasterItem, updateMasterItem, deleteMasterItem, lockUser, addDepartment, updateDepartment, deleteDepartment, updateOrderStatus, placeOrder, sendMessage, addComment, respondToComment, reportIssue, respondToIssue,
       addCompany, updateCompany, deleteCompany, updateAppConfig, loginAsGuest, placeGuestOrder,
       generateNewGuestCode, markBatchDelivered, addUser, updateUser,
       importData, exportData
